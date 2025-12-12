@@ -1187,41 +1187,10 @@
             }
         }
 
-// --- PROTECTION ANTI-COPIE ET LECTURE SEULE ---
 
-// 1. Désactiver le clic droit (menu contextuel) sur toute la page
-document.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-});
-
-// 2. Désactiver la sélection de texte (pour empêcher le copier-coller)
-document.addEventListener('selectstart', function(e) {
-    e.preventDefault();
-});
-
-// 3. Désactiver le copier-coller (Ctrl+C, Cmd+C)
-document.addEventListener('keydown', function(e) {
-    // Vérifier si Ctrl/Cmd est pressé et que la touche 'C' est utilisée.
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
-        e.preventDefault();
-        window.displayMessage("Censure: Le copier-coller est désactivé sur cette page.", true);
     }
-});
 
-// 4. Désactiver la sélection de texte via CSS sur le corps du document
-document.body.style.userSelect = 'none'; 
-document.body.style.webkitUserSelect = 'none';
-document.body.style.MozUserSelect = 'none';
-
-// 5. Réactiver la sélection sur le champ de saisie unique (pour permettre la frappe)
-const textInput = document.getElementById('text-input');
-if (textInput) {
-    textInput.style.userSelect = 'auto'; 
-    textInput.style.webkitUserSelect = 'auto';
-    textInput.style.MozUserSelect = 'auto';
 }
-
-// -------------------------------------------------------------
         document.addEventListener('DOMContentLoaded', () => {
             initializeGrid();
             updateButtonStates(textInput.value); // Initialiser l'état des boutons au chargement
@@ -1235,6 +1204,7 @@ if (textInput) {
 </body>
 
 </html>
+
 
 
 
