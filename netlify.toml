@@ -1,0 +1,9 @@
+[build]
+  publish = "docs"
+
+[[redirects]]
+  from = "/api/gemini"
+  to = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+  status = 200
+  force = true
+  query = {key = ":api_key"}
