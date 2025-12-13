@@ -296,13 +296,13 @@
     <script type="text/javascript">
         
         // --- Configuration API Gemini ---
-        const GEMINI_API_URL = "const GEMINI_API_URL = "https://cosmic-salamander-a87d77.netlify.app/.netlify/functions/gemini";
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
         
         // ***********************************************************************************
         // ***********************************************************************************
         // C'EST ICI QUE DOIT SE TROUVER LA CLÉ API GEMINI !
         // Collez votre clé API ici, entre les guillemets :
-        const API_KEY = ""; 
+        const API_KEY = "AIzaSyB5AqxHa7zssJfrqbXH3I4FVEvmRlg-o2M"; 
         // ***********************************************************************************
         // ***********************************************************************************
         
@@ -1091,7 +1091,13 @@
             }
             
             // 2. VÉRIFICATION DE L'API (Code non censuré)
-            
+            const finalApiKey = typeof API_KEY !== 'undefined' && API_KEY.trim() !== "" ? API_KEY : '';
+
+            if (finalApiKey === "") {
+                window.displayMessage("Erreur Critique : La clé API est absente. La fonctionnalité IA est désactivée.", true);
+                console.error("Échec de l'appel : Clé API manquante ou non valide.");
+                return;
+            }
 
             if (!wordToSearch || isAILoading) return;
             
@@ -1127,7 +1133,7 @@
             
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    const response = await fetch(GEMINI_API_URL, {
+                    const response = await fetch(`${GEMINI_API_URL}?key=${finalApiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -1194,6 +1200,3 @@
     </script>
 </body>
 </html>
-
-
-
