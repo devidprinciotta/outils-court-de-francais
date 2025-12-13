@@ -1,0 +1,23 @@
+[build]
+  # Indique que le contenu web (index.html) est dans le dossier docs/
+  publish = "docs" 
+  
+  # Indique où se trouvent les fonctions
+  functions = "functions" 
+  
+[functions]
+  directory = "functions"
+  
+# Règle CRITIQUE : Cette redirection sert le contenu de 'docs/index.html'
+# lorsque l'utilisateur accède à la racine de l'URL (votredepot.app/).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  
+# Règle conservée : assure que l'accès aux fonctions gemini fonctionne.
+[[redirects]]
+  from = "/.netlify/functions/gemini"
+  to = "/.netlify/functions/gemini"
+  status = 200
+  force = true
