@@ -1090,14 +1090,7 @@
                 return;
             }
             
-            // 2. VÉRIFICATION DE L'API (Code non censuré)
-            const finalApiKey = typeof API_KEY !== 'undefined' && API_KEY.trim() !== "" ? API_KEY : '';
-
-            if (finalApiKey === "") {
-                window.displayMessage("Erreur Critique : La clé API est absente. La fonctionnalité IA est désactivée.", true);
-                console.error("Échec de l'appel : Clé API manquante ou non valide.");
-                return;
-            }
+            
 
             if (!wordToSearch || isAILoading) return;
             
@@ -1200,5 +1193,6 @@
     </script>
 </body>
 </html>
+
 
 
