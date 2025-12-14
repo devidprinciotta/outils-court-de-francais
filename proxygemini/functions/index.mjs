@@ -6,6 +6,11 @@ exports.handler = async (event) => {
 
   // La clé API est lue depuis les variables d'environnement de Netlify.
   const apiKey = process.env.GEMINI_API_KEY; 
+
+  // ...
+const apiKey = process.env.GEMINI_API_KEY; 
+console.log('API Key Status:', apiKey ? 'Key found' : 'Key missing'); // Ligne à ajouter
+// ...
   
   // Vérifie si la clé est présente (l'étape cruciale pour la sécurité)
   if (!apiKey) {
@@ -35,3 +40,4 @@ exports.handler = async (event) => {
     };
   }
 };
+
