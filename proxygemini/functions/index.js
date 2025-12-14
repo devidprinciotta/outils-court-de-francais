@@ -1,7 +1,9 @@
 // netlify/functions/gemini.js
-const { GoogleGenAI } = require('@google/genai');
 
 exports.handler = async (event) => {
+  // Utilisation de l'import dynamique pour contourner l'erreur ERR_REQUIRE_ESM
+  const { GoogleGenAI } = await import('@google/genai'); 
+
   // La clé API est lue depuis les variables d'environnement de Netlify.
   const apiKey = process.env.GEMINI_API_KEY; 
   
@@ -9,7 +11,7 @@ exports.handler = async (event) => {
   if (!apiKey) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "j'en ai marre " }),
+      body: JSON.stringify({ error: "FATAL ERROR: Clé API Netlify non lue." }), // Message clair
     };
   }
 
@@ -33,4 +35,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
