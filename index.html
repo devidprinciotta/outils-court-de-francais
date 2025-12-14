@@ -439,37 +439,46 @@
         let gridButtons = [];
         
         // --- GESTION DE LA VOIX TTS NATIVE ---
-        function findFrenchVoice() {
-            if (!('speechSynthesis' in window)) return null;
-            
-            const voices = window.speechSynthesis.getVoices();
-            let voice = voices.find(v => v.lang === 'fr-FR') || voices.find(v => v.lang.startsWith('fr'));
-            
-            if (!voice) {
-                voice = voices.find(v => v.default);
-            }
-            if (!voice && voices.length > 0) {
-                voice = voices[0];
-            }
-            return voice;
-        }
+function findFrenchVoice() {
+    if (!('speechSynthesis' in window)) return null;
+    
+    const voices = window.speechSynthesis.getVoices();
+    // Liste de noms de voix masculines françaises courantes (pour différents navigateurs/OS)
+    const desiredMaleVoiceNames = ['Thomas', 'Antoine', 'Aurélien', 'Paul', 'Felix']; 
 
-        function initializeVoicesReliably() {
-            frenchVoice = findFrenchVoice();
-            
-            if (window.speechSynthesis.onvoiceschanged === null) {
-                window.speechSynthesis.onvoiceschanged = () => {
-                    frenchVoice = findFrenchVoice();
-                };
-            }
-            if (frenchVoice === null && window.speechSynthesis.getVoices().length === 0) {
-                 const tempUtterance = new SpeechSynthesisUtterance(' ');
-                 tempUtterance.lang = 'fr-FR';
-                 window.speechSynthesis.speak(tempUtterance);
-                 window.speechSynthesis.cancel();
-            }
-        }
-        
+    let voice = null;
+    
+    // 1. Tenter de trouver une voix masculine française spécifique
+    // Ceci résout le problème de prononciation B/C en forçant une voix native.
+    voice = voices.find(v => 
+        v.lang.startsWith('fr') && 
+        desiredMaleVoiceNames.some(name => v.name.includes(name))
+    );
+
+    // 2. Si aucune voix masculine n'est trouvée, prendre la première voix fr-FR
+    if (!voice) {
+        voice = voices.find(v => v.lang === 'fr-FR');
+    }
+
+    // 3. Si fr-FR n'est pas trouvé, prendre n'importe quelle voix française (fr-XX)
+    if (!voice) {
+        voice = voices.find(v => v.lang.startsWith('fr'));
+    }
+
+    // 4. Fallback vers la voix par défaut du système
+    if (!voice) {
+        voice = voices.find(v => v.default);
+    }
+    
+    // 5. Fallback ultime vers la première voix si rien n'est trouvé
+    if (!voice && voices.length > 0) {
+        voice = voices[0];
+    }
+    
+    return voice;
+}
+
+// La fonction initializeVoicesReliably peut rester inchangée car elle appelle celle-ci.
         initializeVoicesReliably();
 
         // --- LOGIQUE DE CENSURE ---
@@ -1169,6 +1178,7 @@ window.callAIGemini = async function(word) {
     </script>
 </body>
 </html>
+
 
 
 
