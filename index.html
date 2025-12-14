@@ -750,7 +750,7 @@
                 }
                 
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'fr-FR'; 
+                utterance.lang = 'fr-BE'; 
                 if (frenchVoice) { utterance.voice = frenchVoice; }
 
                 utterance.onend = () => {
@@ -1169,6 +1169,7 @@ window.callAIGemini = async function(word) {
     </script>
 </body>
 </html>
+
 
 
 
