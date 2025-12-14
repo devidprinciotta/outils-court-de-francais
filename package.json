@@ -1,0 +1,8 @@
+{
+  "name": "gemini-app",
+  "version": "1.0.0",
+  "description": "Proxy for Gemini API",
+  "dependencies": {
+    "@google/genai": "^0.15.0"
+  }
+}
