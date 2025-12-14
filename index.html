@@ -1076,118 +1076,79 @@
         /**
          * Appelle l'API Gemini pour obtenir une définition et un exemple pour le mot donné.
          */
-        window.fetchGeminiDefinition = async function(word) {
-            const wordToSearch = word.trim();
-            const firstWord = wordToSearch.split(/\s+/).filter(w => w.length > 0)[0] || '';
+// Remplace l'ancienne fonction window.fetchGeminiDefinition par le nouvel appel proxy Netlify
+window.callAIGemini = async function(word) {
+    const champTexte = document.getElementById('text-input'); 
+    const texteSaisi = champTexte ? champTexte.value : '';
 
-            // 1. VÉRIFICATION DE LA CENSURE
-            if (isWordBanned(firstWord)) {
-                window.displayMessage("Censure: La définition et l'exemple pour ce mot sont bloqués.", true);
-                aiResponseArea.classList.remove('hidden');
-                aiContent.innerHTML = `<h3 class="text-xl font-bold mb-2 text-red-700">${firstWord.toUpperCase()}</h3><p class="text-red-600 font-semibold">Le mot '${firstWord}' figure sur la liste des mots bannis. La recherche de définition est bloquée par mesure de sécurité.</p>`;
-                aiSources.innerHTML = '';
-                setLoadingAI(false);
-                return;
-            }
-            
-            // 2. VÉRIFICATION DE L'API (Code non censuré)
-            const finalApiKey = typeof API_KEY !== 'undefined' && API_KEY.trim() !== "" ? API_KEY : '';
+    const aiContentArea = document.getElementById('ai-content'); 
+    const messageArea = document.getElementById('message-area'); 
+    const aiResponseArea = document.getElementById('ai-response-area');
+    const aiSources = document.getElementById('ai-sources');
+    
+    // Annuler l'affichage précédent du message général pour ne garder que le statut IA
+    window.displayMessage("", false); 
+    
+    // Vérification de base
+    const trimmedWord = texteSaisi.trim();
+    const firstWord = trimmedWord.split(/\s+/).filter(w => w.length > 0)[0] || '';
+    const isMultiWord = firstWord !== trimmedWord;
+    const isBanned = isWordBanned(firstWord);
 
-            if (finalApiKey === "") {
-                window.displayMessage("Erreur Critique : La clé API est absente. La fonctionnalité IA est désactivée.", true);
-                console.error("Échec de l'appel : Clé API manquante ou non valide.");
-                return;
-            }
-
-            if (!wordToSearch || isAILoading) return;
-            
-            const words = wordToSearch.split(/\s+/).filter(w => w.length > 0);
-            if (words.length > 1) {
-                window.displayMessage("Veuillez saisir un seul mot pour la recherche de définition.", true);
-                return;
-            }
-
-            // Arrêter toute lecture en cours 
-            window.speechSynthesis.cancel();
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
-            ttsQueue = [];
-            isProcessingQueue = false;
-            
-            setLoadingAI(true);
-            window.displayMessage("", false); 
-            
-            const systemPrompt = "Vous êtes un tuteur de vocabulaire pour enfants et un expert en langue française. Fournissez une courte définition simple et un exemple d'utilisation du mot demandé. Formatez la réponse avec 'Définition: [votre définition]\\nExemple: [votre exemple]'. La réponse doit être en français. Ne proposez aucun autre dialogue ou texte que la définition et l'exemple.";
-            const userQuery = `Donnez une définition et un exemple pour le mot : ${wordToSearch}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                tools: [{ "google_search": {} }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-            };
-
-            const maxRetries = 3;
-            let currentDelay = 1000; 
-            
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(`${GEMINI_API_URL}?key=${finalApiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.status === 429) {
-                        if (i < maxRetries - 1) {
-                            await new Promise(resolve => setTimeout(resolve, currentDelay));
-                            currentDelay *= 2; 
-                            continue; 
-                        } else {
-                            throw new Error("Taux de requêtes API dépassé après plusieurs tentatives.");
-                        }
-                    }
-
-                    if (!response.ok) {
-                        const errorBody = await response.text();
-                        throw new Error(`Erreur HTTP: ${response.status} - ${errorBody}`);
-                    }
-
-                    const result = await response.json();
-                    const candidate = result.candidates?.[0];
-
-                    if (candidate && candidate.content?.parts?.[0]?.text) {
-                        const text = candidate.content.parts[0].text;
-                        
-                        let sources = [];
-                        const groundingMetadata = candidate.groundingMetadata;
-                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                            sources = groundingMetadata.groundingAttributions
-                                .map(attribution => ({
-                                    uri: attribution.web?.uri,
-                                    title: attribution.web?.title,
-                                }))
-                                .filter(source => source.uri && source.title);
-                        }
-
-                        displayAIResponse(text, sources);
-                        setLoadingAI(false);
-                        return; // Success
-                    } else {
-                        throw new Error("Réponse de l'IA vide ou mal formée.");
-                    }
-
-                } catch (error) {
-                    console.error("Erreur Gemini:", error);
-                    window.displayMessage(`Impossible de récupérer la définition : ${error.message}.`, true);
-                    setLoadingAI(false);
-                    return; // Exit after failure
-                }
-            }
+    if (trimmedWord === '' || isMultiWord || isBanned) {
+        if (isBanned) {
+            window.displayMessage(`Censure: Le mot '${firstWord}' est bloqué. L'IA n'est pas consultée.`, true);
+        } else if (isMultiWord) {
+            window.displayMessage("Veuillez entrer un seul mot dans le champ pour obtenir une définition IA.", true);
+        } else {
+            window.displayMessage("Veuillez entrer du texte dans le champ avant d'utiliser l'IA.", true);
         }
+        aiResponseArea.classList.add('hidden');
+        return;
+    }
+
+    setLoadingAI(true);
+    aiResponseArea.classList.remove('hidden');
+    aiContentArea.innerHTML = '<div class="flex justify-center items-center"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-8 w-8"></div><span class="ml-3 text-gray-600">Connexion au serveur IA en cours...</span></div>';
 
 
+    try {
+        const PROMPT = `Donne une définition simple et courte (pour enfant) du mot '${firstWord}' et un exemple de phrase l'utilisant. Le tout doit être en français. Formatage : Définition: [Définition]. Exemple: [Exemple].`;
+        
+        const response = await fetch('/.netlify/functions/index', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt: PROMPT }), 
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.result) {
+            // Succès : Afficher la réponse de l'IA
+            aiContentArea.textContent = data.result;
+            aiSources.innerHTML = 'Source : Google Gemini (IA)';
+            window.displayMessage(`Définition IA reçue pour '${firstWord}'.`, false); 
+            
+        } else {
+            // Erreur du serveur (400, 500, ou réponse sans 'result')
+            const errorMessage = `Erreur de l'IA : ${data.error || 'Requête échouée ou réponse vide.'}`;
+            aiContentArea.textContent = errorMessage;
+            aiSources.innerHTML = 'Source : Erreur';
+            window.displayMessage(`Échec de la requête IA.`, true);
+        }
+    } catch (error) {
+        // Erreur réseau ou parsing JSON inattendu côté client
+        console.error('Erreur Fetch ou réseau:', error);
+        aiContentArea.textContent = `Erreur Critique : Impossible de joindre le proxy Netlify. (${error.message})`;
+        aiSources.innerHTML = 'Source : Erreur Critique';
+        window.displayMessage(`Erreur Critique : Impossible de joindre le proxy Netlify.`, true);
+        
+    } finally {
+        setLoadingAI(false);
+    }
+}
         document.addEventListener('DOMContentLoaded', () => {
             initializeGrid();
             updateButtonStates(textInput.value); // Initialiser l'état des boutons au chargement
@@ -1200,6 +1161,7 @@
     </script>
 </body>
 </html>
+
 
 
 
