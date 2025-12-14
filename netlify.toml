@@ -1,9 +1,5 @@
 [build]
-publish = ""
-
-[[redirects]]
-from = "/api/gemini"
-to = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-status = 200
-force = true
-query = {key = ":API_KEY"}
+  # Indique à Netlify que le site web est à la racine
+  publish = "." 
+  # Indique où se trouvent les fonctions
+  functions = "netlify/functions"
