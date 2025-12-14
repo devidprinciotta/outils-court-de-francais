@@ -269,13 +269,21 @@
                 </button>
 
                 <!-- Bouton IA pour la Définition -->
-               <button
-    id="ai-btn"
-    onclick="callAIGemini(textInput.value)" disabled
-    class="btn-action px-4 py-3 bg-purple-600 text-white font-bold rounded-lg flex items-center justify-center shadow-lg hover:bg-purple-700"
->
-    <span id="ai-text">Définition & Exemple (IA)</span>
-</button>
+              <button
+
+                    id="ai-btn"
+
+                    onclick="fetchGeminiDefinition(textInput.value)"
+
+                    disabled
+
+                    class="btn-action px-4 py-3 bg-purple-600 text-white font-bold rounded-lg flex items-center justify-center shadow-lg hover:bg-purple-700"
+
+                >
+
+                    <span id="ai-text">Définition & Exemple (IA)</span>
+
+                </button>
             </div>
         </div>
         
@@ -1161,6 +1169,7 @@ window.callAIGemini = async function(word) {
     </script>
 </body>
 </html>
+
 
 
 
