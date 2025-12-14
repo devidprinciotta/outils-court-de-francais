@@ -9,7 +9,7 @@ exports.handler = async (event) => {
   if (!apiKey) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "API Key not configured in Netlify environment." }),
+      body: JSON.stringify({ error: "j'en ai marre " }),
     };
   }
 
@@ -33,3 +33,4 @@ exports.handler = async (event) => {
     };
   }
 };
+
