@@ -433,35 +433,44 @@
         
         // --- GESTION DE LA VOIX TTS NATIVE ---
 function findFrenchVoice() {
-    if (!('speechSynthesis' in window)) return null;
-    
-    const voices = window.speechSynthesis.getVoices();
-    // Liste de noms de voix masculines françaises courantes avec bonne prononciation
-    const desiredMaleVoiceNames = ['Thomas', 'Antoine', 'Aurélien', 'Paul', 'Felix', 'Grandeur', 'Microsoft Paul'];
+    if (!window.speechSynthesis) {
+        return null;
+    }
+
+    const desiredMaleVoiceNames = ["Thomas", "Antoine", "Aurélien", "Paul", "Félix", "Grandeur", "Microsoft Paul"];
     let voice = null;
-    
-    // 1. Tenter de trouver une voix masculine française spécifique (prioritaire)
-    voice = voices.find(v => 
-        v.lang.startsWith('fr') && 
-        desiredMaleVoiceNames.some(name => v.name.includes(name))
-    );
 
-    // 2. Si aucune voix masculine n'est trouvée, prendre la première voix fr-FR
+    const voices = window.speechSynthesis.getVoices();
+
+    // 1. Essayer de trouver une voix masculine spécifique
+    for (let i = 0; i < voices.length; i++) {
+        if (voices[i].lang === 'fr-FR' && desiredMaleVoiceNames.includes(voices[i].name)) {
+            voice = voices[i];
+            break;
+        }
+    }
+
+    // 2. Sinon, chercher la première voix masculine française disponible
     if (!voice) {
-        voice = voices.find(v => v.lang === 'fr-FR');
+        for (let i = 0; i < voices.length; i++) {
+            if (voices[i].lang === 'fr-FR' && (voices[i].name.includes('male') || voices[i].name.includes('masculin'))) {
+                voice = voices[i];
+                break;
+            }
+        }
     }
 
-    // 3. Si fr-FR n'est pas trouvé, prendre n'importe quelle voix française (fr-XX)
+    // 3. Fallback : Si aucune voix spécifique n'est trouvée, prendre la première voix française
     if (!voice) {
-        voice = voices.find(v => v.lang.startsWith('fr'));
+        for (let i = 0; i < voices.length; i++) {
+            if (voices[i].lang === 'fr-FR') {
+                voice = voices[i];
+                break;
+            }
+        }
     }
 
-    // 4. Fallback ultime
-    if (!voice && voices.length > 0) {
-        voice = voices[0];
-    }
-    
-    return voice; 
+    return voice;
 }
 
 
@@ -1218,6 +1227,7 @@ function findFrenchVoice() {
     </script>
 </body>
 </html>
+
 
 
 
