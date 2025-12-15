@@ -365,8 +365,8 @@
         const charDescriptions = {
             // Personnalisation des lettres (pour que le TTS dise "be" ou "khe")
             'A': 'a', 'a': 'a',
-            'B': 'be', 'b': 'be', 
-            'C': 'khe', 'c': 'khe',
+            'B': 'b', 'b': 'b', 
+            'C': 'c', 'c': 'c',
             
             // Les autres lettres (D-Z) tombent par défaut sur leur nom (ex: 'D' -> 'D')
 
@@ -1103,116 +1103,61 @@ function findFrenchVoice() {
         /**
          * Appelle l'API Gemini pour obtenir une définition et un exemple pour le mot donné.
          */
+        /**
+         * Appelle la Fonction Netlify pour récupérer la définition IA de manière sécurisée.
+         * Ce point d'appel proxy utilise la clé API stockée sur le serveur.
+         */
         window.fetchGeminiDefinition = async function(word) {
-            const wordToSearch = word.trim();
-            const firstWord = wordToSearch.split(/\s+/).filter(w => w.length > 0)[0] || '';
+            
+            // 1. Vérification initiale (censure et mot simple)
+            const trimmedWord = word.trim();
+            const firstWord = trimmedWord.split(/\s+/).filter(w => w.length > 0)[0] || '';
 
-            // 1. VÉRIFICATION DE LA CENSURE
             if (isWordBanned(firstWord)) {
-                window.displayMessage("Censure: La définition et l'exemple pour ce mot sont bloqués.", true);
-                aiResponseArea.classList.remove('hidden');
-                aiContent.innerHTML = `<h3 class="text-xl font-bold mb-2 text-red-700">${firstWord.toUpperCase()}</h3><p class="text-red-600 font-semibold">Le mot '${firstWord}' figure sur la liste des mots bannis. La recherche de définition est bloquée par mesure de sécurité.</p>`;
-                aiSources.innerHTML = '';
-                setLoadingAI(false);
+                window.displayMessage(`Mot banni : Le mot '${firstWord}' ne peut pas être soumis à l'IA.`, true);
                 return;
             }
-            
-            // 2. VÉRIFICATION DE L'API (Code non censuré)
-            const finalApiKey = typeof API_KEY !== 'undefined' && API_KEY.trim() !== "" ? API_KEY : '';
-
-            if (finalApiKey === "") {
-                window.displayMessage("Erreur Critique : La clé API est absente. La fonctionnalité IA est désactivée.", true);
-                console.error("Échec de l'appel : Clé API manquante ou non valide.");
+            if (trimmedWord.split(/\s+/).filter(w => w.length > 0).length > 1) {
+                window.displayMessage("Veuillez entrer un seul mot pour la définition IA.", true);
                 return;
             }
+            if (!firstWord) return;
 
-            if (!wordToSearch || isAILoading) return;
-            
-            const words = wordToSearch.split(/\s+/).filter(w => w.length > 0);
-            if (words.length > 1) {
-                window.displayMessage("Veuillez saisir un seul mot pour la recherche de définition.", true);
-                return;
-            }
-
-            // Arrêter toute lecture en cours 
-            window.speechSynthesis.cancel();
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
-            ttsQueue = [];
-            isProcessingQueue = false;
-            
             setLoadingAI(true);
-            window.displayMessage("", false); 
             
-            const systemPrompt = "Vous êtes un tuteur de vocabulaire pour enfants et un expert en langue française. Fournissez une courte définition simple et un exemple d'utilisation du mot demandé. Formatez la réponse avec 'Définition: [votre définition]\\nExemple: [votre exemple]'. La réponse doit être en français. Ne proposez aucun autre dialogue ou texte que la définition et l'exemple.";
-            const userQuery = `Donnez une définition et un exemple pour le mot : ${wordToSearch}`;
+            // 2. Appel au point de terminaison sécurisé sur Netlify
+            try {
+                // L'URL /api/gemini-definition est notre Fonction Netlify (créée à l'Étape 2)
+                const response = await fetch('/api/gemini-definition', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    // Nous envoyons le mot à la Fonction Netlify
+                    body: JSON.stringify({ word: firstWord }),
+                });
 
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                tools: [{ "google_search": {} }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-            };
-
-            const maxRetries = 3;
-            let currentDelay = 1000; 
-            
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(`${GEMINI_API_URL}?key=${finalApiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.status === 429) {
-                        if (i < maxRetries - 1) {
-                            await new Promise(resolve => setTimeout(resolve, currentDelay));
-                            currentDelay *= 2; 
-                            continue; 
-                        } else {
-                            throw new Error("Taux de requêtes API dépassé après plusieurs tentatives.");
-                        }
-                    }
-
-                    if (!response.ok) {
-                        const errorBody = await response.text();
-                        throw new Error(`Erreur HTTP: ${response.status} - ${errorBody}`);
-                    }
-
-                    const result = await response.json();
-                    const candidate = result.candidates?.[0];
-
-                    if (candidate && candidate.content?.parts?.[0]?.text) {
-                        const text = candidate.content.parts[0].text;
-                        
-                        let sources = [];
-                        const groundingMetadata = candidate.groundingMetadata;
-                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                            sources = groundingMetadata.groundingAttributions
-                                .map(attribution => ({
-                                    uri: attribution.web?.uri,
-                                    title: attribution.web?.title,
-                                }))
-                                .filter(source => source.uri && source.title);
-                        }
-
-                        displayAIResponse(text, sources);
-                        setLoadingAI(false);
-                        return; // Success
-                    } else {
-                        throw new Error("Réponse de l'IA vide ou mal formée.");
-                    }
-
-                } catch (error) {
-                    console.error("Erreur Gemini:", error);
-                    window.displayMessage(`Impossible de récupérer la définition : ${error.message}.`, true);
-                    setLoadingAI(false);
-                    return; // Exit after failure
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `Erreur HTTP ${response.status} lors de l'appel à la Fonction Netlify.`);
                 }
+
+                const data = await response.json();
+                
+                // 3. Traitement de la réponse de la Fonction Netlify
+                if (data.text) {
+                    displayAIResponse(data.text, data.sources || []);
+                } else {
+                    throw new Error("Réponse de la Fonction Netlify vide.");
+                }
+
+            } catch (error) {
+                console.error("Erreur IA sécurisée:", error);
+                window.displayMessage(`Erreur critique de la fonctionnalité IA : ${error.message}.`, true);
+            } finally {
+                setLoadingAI(false);
             }
-        }
+        };
 
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1227,6 +1172,7 @@ function findFrenchVoice() {
     </script>
 </body>
 </html>
+
 
 
 
