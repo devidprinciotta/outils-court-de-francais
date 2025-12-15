@@ -1,9 +1,2 @@
 [build]
-  # Votre chemin vers le dossier contenant index.js
   functions = "netlify/functions"
-
-[[redirects]]
-  # La fonction à cibler est index (nom du fichier .js)
-  from = "/api/*"
-  to = "/.netlify/functions/index"
-  status = 200
