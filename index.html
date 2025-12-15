@@ -1128,7 +1128,7 @@ function findFrenchVoice() {
             // 2. Appel au point de terminaison sécurisé sur Netlify
             try {
                 // L'URL /api/gemini-definition est notre Fonction Netlify (créée à l'Étape 2)
-                const response = await fetch('/api/', {
+                const response = await fetch('/api/index', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1172,6 +1172,7 @@ function findFrenchVoice() {
     </script>
 </body>
 </html>
+
 
 
 
