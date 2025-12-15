@@ -9,6 +9,13 @@ const apiKey = process.env.GEMINI_API_KEY;
 const ai = new GoogleGenAI({apiKey});
 
 export async function handler(event, context) {
+    // DANS gemini-definition.js
+
+export async function handler(event, context) {
+    // AJOUTER CETTE LIGNE :
+    console.log("Event received:", JSON.stringify(event)); 
+
+    // ... le reste du code de vérification de la clé API, etc.
     // Vérification de l'absence de clé API
     if (!apiKey) {
         return {
@@ -92,4 +99,5 @@ export async function handler(event, context) {
         };
     }
 }
+
 
