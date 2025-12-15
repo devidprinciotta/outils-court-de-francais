@@ -1,24 +1,35 @@
-// Test temporaire pour vérifier que Netlify renvoie du JSON
+// netlify/functions/gemini.js
+const { GoogleGenAI } = require('@google/genai');
 
-exports.handler = async (event, context) => {
-    // Vérification de la présence du corps (qui était la dernière erreur avant le plantage)
-    if (!event.body) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ text: "Erreur client: Pas de corps de requête.", sources: [] })
-        };
-    }
-    
-    // Si le corps est présent, renvoie une réponse JSON valide 200 OK
+exports.handler = async (event) => {
+  // La clé API est lue depuis les variables d'environnement de Netlify.
+  const apiKey = process.env.GEMINI_API_KEY; 
+  
+  // Vérifie si la clé est présente (l'étape cruciale pour la sécurité)
+  if (!apiKey) {
     return {
-        statusCode: 200,
-        headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*", 
-        },
-        body: JSON.stringify({ 
-            text: "TEST OK: La fonction Netlify s'exécute correctement et renvoie du JSON.", 
-            sources: [] 
-        })
+      statusCode: 500,
+      body: JSON.stringify({ error: "API Key not configured in Netlify environment." }),
     };
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  // Récupère les données envoyées par votre front-end (index.html)
+  try {
+    const { model, contents } = JSON.parse(event.body);
+
+    const response = await ai.models.generateContent({ model, contents });
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(response),
+    };
+  } catch (error) {
+    console.error('Gemini API Error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Failed to communicate with Gemini API or process request.' }),
+    };
+  }
 };
