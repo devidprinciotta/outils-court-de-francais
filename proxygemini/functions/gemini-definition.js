@@ -3,7 +3,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 // 1. CORRECTION du nom de la clé API pour correspondre à votre variable Netlify
-const apiKey = process.env.VITE_GEMINI_API_KEY; 
+const apiKey = process.env.GEMINI_API_KEY; 
 
 // Crée une instance du client Gemini
 const ai = new GoogleGenAI({apiKey});
@@ -13,7 +13,7 @@ export async function handler(event, context) {
     if (!apiKey) {
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: "Configuration Error: VITE_GEMINI_API_KEY is missing." })
+            body: JSON.stringify({ message: "Configuration Error: GEMINI_API_KEY is missing." })
         };
     }
 
@@ -92,3 +92,4 @@ export async function handler(event, context) {
         };
     }
 }
+
