@@ -2,6 +2,7 @@
   functions = "proxygemini/functions"
 
 [[redirects]]
+  # Changez le chemin "to" pour pointer directement vers le dossier de la fonction (proxygemini)
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  to = "/.netlify/functions/proxygemini"
   status = 200
