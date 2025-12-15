@@ -1,28 +1,26 @@
-// proxygemini/functions/index.mjs
+// proxygemini/functions/gemini-definition.js (CODE CORRIGÉ)
+
 import { GoogleGenAI } from "@google/genai";
 
-// Clé API
-const apiKey = process.env.GEMINI_API_KEY;
+// 1. CORRECTION du nom de la clé API pour correspondre à votre variable Netlify
+const apiKey = process.env.VITE_GEMINI_API_KEY; 
 
 // Crée une instance du client Gemini
 const ai = new GoogleGenAI({apiKey});
 
-// La logique est désormais exportée dans une fonction handler, résolvant l'erreur Top-level return
 export async function handler(event, context) {
-
     // Vérification de l'absence de clé API
     if (!apiKey) {
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Configuration Error: GEMINI_API_KEY is missing." })
+            body: JSON.stringify({ message: "Configuration Error: VITE_GEMINI_API_KEY is missing." })
         };
     }
 
-    // Le corps de la requête est requis
     if (!event.body) {
         return {
             statusCode: 400,
-            body: JSON.stringify({ error: "Missing request body" })
+            body: JSON.stringify({ message: "Missing request body" })
         };
     }
 
@@ -32,17 +30,21 @@ export async function handler(event, context) {
     } catch (e) {
         return {
             statusCode: 400,
-            body: JSON.stringify({ error: "Invalid JSON format" })
+            body: JSON.stringify({ message: "Invalid JSON format" })
         };
     }
+    
+    // 2. CORRECTION: Récupère la clé 'word' envoyée par le client
+    const word = data.word; 
 
-    const prompt = data.prompt;
+    // Définition du prompt basée sur le mot reçu
+    const prompt = `Explique le mot "${word}" simplement à un enfant de 6 ans. Fournis une définition claire et un exemple de phrase qui utilise ce mot. Réponds uniquement en français. Formate la réponse comme ceci: Définition: [Votre définition]\\nExemple: [Votre exemple].`;
 
-    // Vérification de l'absence de prompt
-    if (!prompt) {
+    // Vérification de l'absence de mot
+    if (!word) {
         return {
             statusCode: 400,
-            body: JSON.stringify({ error: "Missing prompt" })
+            body: JSON.stringify({ message: "Missing word in request body" })
         };
     }
 
@@ -51,29 +53,42 @@ export async function handler(event, context) {
             model: "gemini-2.5-flash",
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             config: {
-                systemInstruction: "Tu es un assistant IA pédagogique et bienveillant, spécialement conçu pour donner des définitions simples et adaptées aux enfants en français. Tu réponds uniquement avec le contenu demandé par l'utilisateur.",
-                temperature: 0.4
+                systemInstruction: "Tu es un tuteur de vocabulaire pour enfants et un expert en langue française. Ne réponds qu'avec le contenu demandé (Définition et Exemple), sans aucun dialogue supplémentaire.",
+                temperature: 0.2, // Température basse pour des définitions factuelles
+                // Activation de la recherche Google pour les sources
+                tools: [{ googleSearch: {} }], 
             }
         });
 
-        // La réponse brute de l'IA
-        const result = response.text;
+        // Extraction du texte et des sources
+        const resultText = response.text;
+        
+        let sources = [];
+        const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+        if (groundingMetadata && groundingMetadata.groundingAttributions) {
+            sources = groundingMetadata.groundingAttributions
+                .map(attribution => ({
+                    uri: attribution.web?.uri,
+                    title: attribution.web?.title,
+                }))
+                .filter(source => source.uri && source.title);
+        }
 
-        // Réponse HTTP finale
+        // 3. CORRECTION: Renvoie 'text' et 'sources' comme attendu par le client
         return {
             statusCode: 200,
             headers: {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*", // Autoriser toutes les origines pour le proxy Netlify
+                "Access-Control-Allow-Origin": "*", 
             },
-            body: JSON.stringify({ result: result })
+            body: JSON.stringify({ text: resultText, sources: sources })
         };
 
     } catch (error) {
         console.error("Erreur Gemini:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Erreur lors de la communication avec l'API Gemini." })
+            body: JSON.stringify({ message: `Erreur lors de la communication avec l'API Gemini: ${error.message}` })
         };
     }
 }
