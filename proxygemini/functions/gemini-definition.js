@@ -1,26 +1,21 @@
-// proxygemini/functions/gemini-definition.js (CODE CORRIGÉ)
+// proxygemini/functions/gemini-definition.js (CODE FINAL CORRIGÉ)
 
+// 1. Correction : Utilisation de 'require' pour la compatibilité Netlify (CJS)
 const { GoogleGenAI } = require("@google/genai");
 
-// 1. CORRECTION du nom de la clé API pour correspondre à votre variable Netlify
+// Correction : Utilise le nom de clé API que vous avez sur Netlify
 const apiKey = process.env.GEMINI_API_KEY; 
 
 // Crée une instance du client Gemini
 const ai = new GoogleGenAI({apiKey});
 
-export async function handler(event, context) {
-    // DANS gemini-definition.js
-
-export async function handler(event, context) {
-    // AJOUTER CETTE LIGNE :
-    console.log("Event received:", JSON.stringify(event)); 
-
-    // ... le reste du code de vérification de la clé API, etc.
+// 2. Correction : La fonction n'est plus exportée directement (syntaxe CJS)
+async function handler(event, context) {
     // Vérification de l'absence de clé API
     if (!apiKey) {
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: "Configuration Error: GEMINI_API_KEY is missing." })
+            body: JSON.stringify({ message: "Configuration Error: GEMINI_API_KEY is missing or invalid." })
         };
     }
 
@@ -33,6 +28,8 @@ export async function handler(event, context) {
 
     let data;
     try {
+        // Ajout d'un log pour s'assurer que l'événement est bien reçu
+        console.log("Event received. Attempting to parse body...");
         data = JSON.parse(event.body);
     } catch (e) {
         return {
@@ -41,10 +38,10 @@ export async function handler(event, context) {
         };
     }
     
-    // 2. CORRECTION: Récupère la clé 'word' envoyée par le client
+    // Récupère la clé 'word' envoyée par le client
     const word = data.word; 
 
-    // Définition du prompt basée sur le mot reçu
+    // Définition du prompt
     const prompt = `Explique le mot "${word}" simplement à un enfant de 6 ans. Fournis une définition claire et un exemple de phrase qui utilise ce mot. Réponds uniquement en français. Formate la réponse comme ceci: Définition: [Votre définition]\\nExemple: [Votre exemple].`;
 
     // Vérification de l'absence de mot
@@ -61,7 +58,7 @@ export async function handler(event, context) {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             config: {
                 systemInstruction: "Tu es un tuteur de vocabulaire pour enfants et un expert en langue française. Ne réponds qu'avec le contenu demandé (Définition et Exemple), sans aucun dialogue supplémentaire.",
-                temperature: 0.2, // Température basse pour des définitions factuelles
+                temperature: 0.2, 
                 // Activation de la recherche Google pour les sources
                 tools: [{ googleSearch: {} }], 
             }
@@ -81,7 +78,7 @@ export async function handler(event, context) {
                 .filter(source => source.uri && source.title);
         }
 
-        // 3. CORRECTION: Renvoie 'text' et 'sources' comme attendu par le client
+        // Renvoie 'text' et 'sources' comme attendu par le client
         return {
             statusCode: 200,
             headers: {
@@ -100,5 +97,5 @@ export async function handler(event, context) {
     }
 }
 
-
-
+// 3. Correction : Exportation de la fonction en mode CJS à la fin du fichier
+exports.handler = handler;
