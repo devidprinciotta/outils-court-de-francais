@@ -1,6 +1,6 @@
 // proxygemini/functions/gemini-definition.js (CODE CORRIGÉ)
 
-import { GoogleGenAI } from "@google/genai";
+const { GoogleGenAI } = require("@google/genai");
 
 // 1. CORRECTION du nom de la clé API pour correspondre à votre variable Netlify
 const apiKey = process.env.GEMINI_API_KEY; 
@@ -99,5 +99,6 @@ export async function handler(event, context) {
         };
     }
 }
+
 
 
