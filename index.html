@@ -3,1192 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synthèse Vocale TTS - Version 6.3</title>
-    <!-- Chargement de Tailwind CSS pour un design moderne et responsive -->
+    <title>Outil d'Apprentissage du Français</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chargement des polices: Dancing Script (cursif long et gras) et Inter (imprimé) -->
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* La police principale Inter est maintenue */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        /* Styles personnalisés pour la grille et la typographie */
         body {
-            font-family: 'Inter', sans-serif;
-            /* FOND D'ÉCRAN PASTEL ARC-EN-CIEL LÉGER */
-            background: linear-gradient(135deg, #e3f2fd 0%, #fff3e0 25%, #fce4ec 50%, #e0f7fa 75%, #f3e5f5 100%);
-        }
-        
-        /* STYLE DES BOUTONS V4.5 */
-        .btn-letter, .btn-special {
-            transition: all 0.15s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            /* Augmenter la taille du bouton pour contenir les deux caractères */
-            height: 4rem; /* Nouvelle taille pour un meilleur affichage */
-            position: relative; /* Nécessaire pour positionner les span enfants */
-            padding: 0; /* Retirer le padding par défaut */
-            overflow: hidden;
-            font-weight: 700;
-        }
-        .btn-letter:hover, .btn-special:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-        }
-        /* Style V4.5: Bleu pour les lettres majuscules (A-Z) */
-        .btn-letter { background-color: #bfdbfe; color: #1d4ed8; } 
-        /* Style V4.5: Turquoise pour les accents/spéciaux */
-        .btn-special { background-color: #e0f2f1; color: #00796b; } 
-
-        /* NOUVEAU STYLE: Positionnement des caractères */
-        .char-display {
-            position: absolute;
-            font-family: 'Inter', sans-serif; /* Imprimé par défaut (Mode Normal) */
-            transition: font-family 0.3s ease;
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f7f7;
         }
 
-        .char-upper {
-            top: 0.25rem; /* Haut */
-            left: 0.5rem; /* Gauche */
-            font-size: 1.5rem; /* Grande taille pour la majuscule */
-        }
-        .char-lower {
-            bottom: 0.25rem; /* Bas */
-            right: 0.5rem; /* Droite */
-            font-size: 1.25rem; /* Petite taille pour la minuscule */
-            opacity: 0.7; /* Légèrement plus pâle */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 20px auto;
         }
 
-        /* CLASSE DE BASCULE POUR LES CARACTÈRES SUR LES BOUTONS */
-        .handwriting-font-on-button {
-            font-family: 'Dancing Script', cursive !important;
-            font-weight: 700 !important;
-        }
-
-        .btn-action {
-            transition: background-color 0.2s, transform 0.1s;
-        }
-        .btn-action:hover {
-            transform: scale(1.02);
-        }
-        .btn-action:disabled {
-            background-color: #a8b9c9;
-            cursor: not-allowed;
-            transform: none;
-        }
-        /* Style pour l'indicateur de chargement */
-        .loader {
-          border-top-color: #3b82f6;
-          -webkit-animation: spin 1s linear infinite;
-          animation: spin 1s linear infinite;
-        }
-
-        @-webkit-keyframes spin {
-          0% { -webkit-transform: rotate(0deg); }
-          100% { -webkit-transform: rotate(360deg); }
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        /* STYLE UNIFORME POUR LE CADRE D'ÉCRITURE */
-        .text-input-base {
-            height: 5rem;     
-            line-height: 1;    
-            padding-top: 0;   
-            padding-bottom: 0;
-            overflow: hidden; 
-            font-size: 5.0rem; 
-        }
-        
-        /* STYLE SPÉCIFIQUE AU MODE MANUSCRIT (S'APPLIQUE UNIQUEMENT AU CHAMP TEXTE) */
-        .handwriting-mode {
-            font-family: 'Dancing Script', cursive; 
-            font-weight: 700; 
-            font-size: 3.8rem; /* Ajusté pour mieux tenir sur une seule ligne */
-        }
-        
-        /* STYLES POUR LE BOUTON COMMUTATEUR ÉMOJI */
-        .vocal-toggle-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 48px; /* Taille fixe, légèrement plus grand */
-            height: 48px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
+        .grid-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            font-size: 1.5rem; /* Taille de l'emoji */
-            border: 2px solid transparent;
+            transition: transform 0.1s, box-shadow 0.1s;
+            position: relative;
         }
 
-        /* État Inactif (TTS Actif, Oreille) */
-        .vocal-toggle-btn.tts-active {
-            background-color: #D1D5DB; /* bg-gray-300 */
-            border-color: #9CA3AF;
-            opacity: 0.9;
+        .grid-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
         }
 
-        /* État Actif (MP3 Vocal Actif, Haut-parleur) */
-        .vocal-toggle-btn.mp3-active {
-            background-color: #8B5CF6; /* bg-violet-500 */
-            border-color: #6D28D9;
-            color: white; /* L'emoji reste coloré, mais le bouton a une couleur de fond */
-            box-shadow: 0 8px 15px rgba(139, 92, 246, 0.4);
+        .grid-item.active {
+            background-color: #d1e7dd; /* Vert clair pour l'activation */
+            border-color: #198754;
+        }
+
+        .letter {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            line-height: 1;
+        }
+
+        .sound-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            color: #007bff;
+            font-size: 1rem;
+        }
+
+        /* Styles spécifiques pour le lecteur audio */
+        #audio-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #212529;
+            color: white;
+            padding: 10px 20px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #audio-controls button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #audio-controls button:hover {
+            background-color: #0056b3;
+        }
+
+        #message-area {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            padding: 10px;
+            text-align: center;
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .message-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Styles pour l'IA et les sources */
+        #ai-response-area {
+            border-left: 5px solid #007bff;
+            padding-left: 15px;
+        }
+
+        .source-link {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .source-link:hover {
+            text-decoration: underline;
         }
     </style>
-    <!-- Code Firebase minimaliste -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        
-        window.firebaseApp = null;
-        window.firebaseAuth = null;
-        window.currentUserId = null;
-        window.isAuthReady = false;
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        async function initFirebaseAndAuth() {
-            try {
-                if (!firebaseConfig) {
-                    console.error("Firebase config is missing.");
-                    window.isAuthReady = true; 
-                    return;
-                }
-                
-                window.firebaseApp = initializeApp(firebaseConfig);
-                window.firebaseAuth = getAuth(window.firebaseApp);
-                
-                if (initialAuthToken) {
-                    await signInWithCustomToken(window.firebaseAuth, initialAuthToken);
-                } else {
-                    await signInAnonymously(window.firebaseAuth);
-                }
-
-                window.currentUserId = window.firebaseAuth.currentUser?.uid || 'anonymous';
-                window.isAuthReady = true;
-                console.log("Firebase Auth Ready. User ID:", window.currentUserId);
-            } catch (error) {
-                console.error("Firebase authentication error:", error);
-                window.isAuthReady = true;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', initFirebaseAndAuth);
-    </script>
 </head>
+<body>
 
-<body class="p-4 md:p-8 min-h-screen">
+    <header class="text-center py-6 bg-white shadow-md">
+        <h1 class="text-3xl font-extrabold text-gray-800">Apprentissage de la Prononciation du Français</h1>
+        <p class="text-gray-600 mt-2">Cliquez sur une lettre ou un mot pour entendre la prononciation.</p>
+    </header>
 
-    <div class="max-w-5xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl">
-        
-        <!-- Mention de l'auteur -->
-        <header class="text-center mb-2">
-            <p class="text-xl font-extrabold text-gray-500 italic">
-                Créé par le papa de Enrique
-            </p>
-        </header>
+    <div id="message-area" class="hidden"></div>
 
-        <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center border-b pb-4">
-            Synthèse Vocale TTS - Version <span class="text-green-600">6.3</span>
-        </h1>
-        
-        <!-- Section 1: Grille de l'Alphabet et Caractères Spéciaux (MAJUSCULES PAR DÉFAUT) -->
-        <div class="mb-8">
-            <div class="flex items-center justify-end space-x-3 mb-4">
-                
-                <!-- NOUVEAU BOUTON : Interrupteur Vocal MP3 -->
-                <!-- L'emoji initial est l'oreille (TTS actif) -->
-                <button 
-                    id="vocal-toggle-btn" 
-                    onclick="toggleVocalMode()"
-                    title="Basculer entre TTS (Oreille) et Vocal MP3 (Haut-parleur)"
-                    class="vocal-toggle-btn tts-active"
-                >
-                    <span id="vocal-emoji">👂</span> 
-                </button>
-                
-                <!-- Bouton de bascule de police -->
-                <button 
-                    id="toggle-handwriting" 
-                    onclick="toggleHandwritingMode()"
-                    class="text-sm font-medium transition duration-150 py-1 px-3 border rounded-full shadow-md whitespace-nowrap"
-                >
-                    <!-- Libellé dynamique -->
-                </button>
-            </div>
-            
-            <!-- Conteneur pour les LETTRES NORMALES -->
-            <div id="letter-grid" class="grid grid-cols-7 sm:grid-cols-9 md:grid-cols-13 gap-2 mb-6">
-                <!-- Les lettres A-Z seront injectées ici par JS -->
-            </div>
-            
-            <!-- Conteneur pour les CARACTÈRES SPÉCIAUX -->
-            <div id="special-char-grid" class="grid grid-cols-7 sm:grid-cols-9 md:grid-cols-13 gap-2">
-                <!-- Les accents seront injectés ici par JS -->
-            </div>
+    <div id="letter-grid" class="grid-container">
         </div>
-        
-        <!-- Section 2: Espace de Traitement de Texte et Lecture -->
-        <div>
-            <div class="flex items-stretch space-x-3 mb-4">
-                <input
-                    type="text"
-                    id="text-input"
-                    placeholder="Le texte s'affiche ici... (Max 1 mot pour la définition IA)"
-                    class="text-input-base flex-grow p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg shadow-inner"
-                    value=""
-                    oninput="updateButtonStates(this.value);"
-                >
+
+    <div class="max-w-4xl mx-auto mt-8 p-6 bg-white rounded-lg shadow-lg hidden" id="ai-response-area">
+        <div id="ai-content" class="text-gray-700 mb-4">
             </div>
-            
-            <!-- Groupe de boutons d'action (Maintenant 3 colonnes) -->
-            <div class="grid grid-cols-3 gap-3 mb-4">
-                
-                <!-- Bouton Parler (TTS Natif) -->
-                <button
-                    id="speak-btn"
-                    onclick="generateAndPlayWordAudio()"
-                    disabled
-                    class="btn-action px-4 py-3 bg-green-600 text-white font-bold rounded-lg flex items-center justify-center shadow-lg hover:bg-green-700"
-                >
-                    <span id="speak-text">Parler</span>
-                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.121-7.072a8 8 0 010 11.314m-12.284-8.151l-4.25 4.25a1 1 0 000 1.414l4.25 4.25a1 1 0 001.414 0l4.25-4.25a1 1 0 000-1.414l-4.25-4.25a1 1 0 00-1.414 0zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                </button>
-
-                <!-- Bouton Effacer -->
-                <button
-                    id="clear-btn"
-                    onclick="clearText()"
-                    class="btn-action px-4 py-3 bg-red-500 text-white font-semibold rounded-lg shadow hover:bg-red-600"
-                >
-                    Effacer
-                </button>
-
-                <!-- Bouton IA pour la Définition -->
-                <button
-                    id="ai-btn"
-                    onclick="fetchGeminiDefinition(textInput.value)"
-                    disabled
-                    class="btn-action px-4 py-3 bg-purple-600 text-white font-bold rounded-lg flex items-center justify-center shadow-lg hover:bg-purple-700"
-                >
-                    <span id="ai-text">Définition & Exemple (IA)</span>
-                </button>
+        <div id="ai-sources" class="text-sm text-gray-500 border-t pt-2 mt-2">
             </div>
+        <div class="mt-4 flex space-x-4">
+            <button id="tts-read-button" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50" disabled>Lire la réponse</button>
+            <button id="tts-stop-button" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50" disabled>Arrêter la lecture</button>
         </div>
-        
-        <!-- Zone de message pour les erreurs/infos -->
-        <div id="message-area" class="mt-6 p-4 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg hidden"></div>
-        
-        <!-- Nouvelle zone de réponse de l'IA -->
-        <div id="ai-response-area" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg hidden">
-            <div id="ai-content" class="text-gray-800 leading-relaxed"></div>
-            <div id="ai-sources" class="mt-4 pt-2 border-t border-gray-200 text-xs text-gray-500"></div>
-        </div>
-        
-        <audio id="audio-player" class="hidden"></audio>
-
     </div>
 
-    <script type="text/javascript">
-        
+
+    <div id="audio-controls" class="hidden">
+        <audio id="audio-player" controls class="hidden"></audio>
+        <div id="current-word" class="text-lg font-semibold">Prêt.</div>
+        <div id="audio-buttons" class="space-x-4">
+            <button id="play-next-button" disabled>Mot Suivant</button>
+            <button id="play-all-button">Lire Tout</button>
+        </div>
+    </div>
+    
+    <script>
         // --- Configuration API Gemini ---
-       // NOUVEAU : Le code client appelle maintenant la fonction Netlify.
-const GEMINI_FUNCTION_URL = "/.netlify/functions/gemini"; // Point d'accès de votre fonction
-        // ***********************************************************************************
-        // ***********************************************************************************
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+        // NOUVEAU : Point d'accès de votre fonction Netlify.
+        const GEMINI_FUNCTION_URL = "/.netlify/functions/gemini"; 
+        // NOTE: La clé API n'est plus utilisée directement ici. Elle est sur Netlify.
+        const API_KEY = ""; 
         
         // --- Configuration MP3 ---
-        // CHEMIN DE BASE MP3 : Le caractère est ajouté en minuscule (ex: 'a.mp3', 'é.mp3')
-        const MP3_BASE_URL = "https://raw.githubusercontent.com/devidprinciotta/Alphabet-phon-tique/main/Mes%20son%20alphabet_/"; 
-        // -----------------------------------
-        
+        // Le caractère est ajouté en minuscule (ex: 'A.mp3' devient 'a.mp3')
+        const CHEMIN_DE_BASE_MP3_URL = "https://raw.githubusercontent.com/devidprinciotta/alphabet-phon-tique/main/Mes%20sons%20alphabet/";
+
         // --- LISTE DES MOTS CENSURÉS (EN MINUSCULES) ---
         // Liste exhaustive collectée via recherche Internet (gros mots, obscénités, termes sexuels)
         const BANNED_WORDS = [
-            // Injures / Grossièretés communes
-            "putain", "bordel", "merde", "con", "conne", "conard", "connard", "salaud", "salope", "pute", 
-            "chier", "foutre", "enculer", "branleur", "branleuse", "cul", "couille", "bite", "chatte",
-            "ta gueule", "casse-toi", "niquer", "chiotte", "crétin", "idiot", "imbécile", "abruti",
-            "débile", "bouffon", "clochard", "sodomiser", "pédé", "gougnotte", "tapette", "lopette",
-            "enculé", "mongol", "nègre", "rastaquouère", "boche", "chleuh", "foutoir",
-            
-            // Termes sexuels/obscènes
-            "sexe", "sexuel", "fellation", "cunnilingus", "orgasme", "sperme", "vagin", "pénis", 
-            "éjaculation", "masturbation", "porno", "pornographie", "coït", "levrette", "kamasutra",
-            "hardcore", "pisser", "faire caca", "nunuche", "nichons", "tétons", "zizi", "pipi", 
-            "caca", "anal", "sodomisation", "partouze", "prostituée", "baise", "baiser", "verge",
-            "pisser", "faire l'amour", // 'Faire l'amour' est inclus pour la prudence
-            
-            // Termes liés à l'anatomie intime (pour la prudence)
-            "anus", "vessie", "rectum", 
-            
-            // Autres termes jugés vulgaires ou discriminatoires
-            "gros mot", "sangsue", "racaille", "face de cul", "mal baisé", "bander", "gode", "trique",
-            "pouffe", "poufiasse", "souillon"
-        ];
-        // -------------------------------------------------------------
-        
-        // Elements de l'interface utilisateur
-        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        
-        // Liste des caractères spéciaux (Accents français uniquement)
-        const accentedCharsMaj = [
-            'É', 'È', 'Ê', 'Ë', 
-            'À', 'Â', 
-            'Ù', 'Û', 
-            'Î', 'Ï', 
-            'Ô', 'Ö', 
-            'Œ', 'Ç'
+            // Injuries / Grossièretés communes
+            "putain", "bordel", "merde", "con", "conne", "connard", "salaud", "salope", "pute", 
+            "chier", "foutre", "enculer", "branleur", "cul", "couille", "bite", "chatte", 
+            "ta gueule", "casse-toi", "niquer", "crétin", "idiot", "imbécile", "abruti", 
+            "brute", "débile", "gogol", "mongol", "tarlouze", "pd", "pédé", "tapette", 
+            "bougnoule", "nègre", "racailles", "raciste", "juif", "arabe", "nazi", 
+            // Verbes / Actions obscènes
+            "violer", "tripoter", "sucer", "baiser", "pénis", "vagin", "sexe", "sodomie",
+            // Termes religieux (potentiellement offensants dans certains contextes)
+            "satan", "lucifer", "diable", "démon",
+            // Divers termes crus
+            "caca", "pipi", "vomi"
         ];
         
-        // Liste correspondante des minuscules pour les accents
-        const accentedCharsMin = [
-            'é', 'è', 'ê', 'ë', 
-            'à', 'â', 
-            'ù', 'û', 
-            'î', 'ï', 
-            'ô', 'ö', 
-            'œ', 'ç'
-        ];
-        
-        // --- MAP DE DESCRIPTION DES CARACTÈRES SPÉCIAUX ET PERSONNALISATION ---
-        // Cette map est utilisée uniquement pour le FALLBACK TTS (si le MP3 est manquant)
-        const charDescriptions = {
-            // Personnalisation des lettres (pour que le TTS dise "be" ou "khe")
-            'A': 'a', 'a': 'a',
-            'B': 'b', 'b': 'b', 
-            'C': 'c', 'c': 'c',
-            
-            // Les autres lettres (D-Z) tombent par défaut sur leur nom (ex: 'D' -> 'D')
-
-            // Accents
-            'É': 'e accent aigu', 'é': 'e accent aigu',
-            'È': 'e accent grave', 'è': 'e accent grave',
-            'Ê': 'e accent circonflexe', 'ê': 'e accent circonflexe',
-            'Ë': 'e tréma', 'ë': 'e tréma',
-            'À': 'a accent grave', 'à': 'a accent grave',
-            'Â': 'a accent circonflexe', 'â': 'a accent circonflexe',
-            'Ù': 'u accent grave', 'ù': 'u accent grave',
-            'Û': 'u accent circonflexe', 'û': 'u accent circonflexe',
-            'Î': 'i accent circonflexe', 'î': 'i accent circonflexe',
-            'Ï': 'i tréma', 'ï': 'i tréma',
-            'Ô': 'o accent circonflexe', 'ô': 'o accent circonflexe',
-            'Ö': 'o tréma', 'ö': 'o tréma',
-            'Œ': 'o e liés', 'œ': 'o e liés',
-            'Ç': 'c cédille', 'ç': 'c cédille',
-            
-            // Compléter automatiquement les lettres restantes (D-Z) pour le TTS
-            ...Object.fromEntries(alphabet.split('').filter(c => !['A', 'B', 'C'].includes(c)).map(c => [c, c])),
-            ...Object.fromEntries(alphabet.toLowerCase().split('').filter(c => !['a', 'b', 'c'].includes(c)).map(c => [c, c])),
-        };
-        // -------------------------------------------------------------
-        
-        // Elements de l'interface utilisateur
-        const letterGrid = document.getElementById('letter-grid'); 
-        const specialCharGrid = document.getElementById('special-char-grid');
-        const textInput = document.getElementById('text-input');
-        const speakButton = document.getElementById('speak-btn');
-        const speakText = document.getElementById('speak-text');
-        const aiButton = document.getElementById('ai-btn');
-        const aiText = document.getElementById('ai-text');
-        const messageArea = document.getElementById('message-area');
+        // --- VARIABLES GLOBALES ---
+        let currentWordElement = null;
+        let ttsQueue = [];
+        let isProcessingQueue = false;
+        let isAILoading = false;
+        const audioPlayer = document.getElementById('audio-player');
+        const playNextButton = document.getElementById('play-next-button');
+        const playAllButton = document.getElementById('play-all-button');
+        const currentWordDisplay = document.getElementById('current-word');
         const aiResponseArea = document.getElementById('ai-response-area');
         const aiContent = document.getElementById('ai-content');
         const aiSources = document.getElementById('ai-sources');
-        const toggleBtn = document.getElementById('toggle-handwriting'); 
-        const vocalToggleBtn = document.getElementById('vocal-toggle-btn'); 
-        const vocalEmojiSpan = document.getElementById('vocal-emoji');
-        const audioPlayer = document.getElementById('audio-player');
-
-        // Définition des emojis pour la bascule
-        const EMOJI_TTS = '👂'; // Oreille (TTS actif par défaut)
-        const EMOJI_MP3 = '🔊'; // Haut-parleur (MP3 actif)
-
-        // Libellés du bouton
-        const printedLabelHTML = `<span class="font-extrabold text-xl">A B C</span>`; 
-        const handwritingLabelHTML = `<span class="handwriting-font-on-button font-bold text-2xl">A B C</span>`; 
-
-        // États
-        let isSpeaking = false; 
-        let isAILoading = false;
-        let frenchVoice = null;
-        let isHandwritingMode = false;
-        let isVocalMP3Mode = true; // CHANGEMENT : MP3 est désormais le mode par défaut au lancement
-
-        // --- GESTION DE LA FILE D'ATTENTE TTS ---
-        let ttsQueue = [];       
-        let isProcessingQueue = false; 
-
-        // Référence aux boutons de la grille (initialisée après DOMContentLoaded)
-        let gridButtons = [];
-        
-        // --- GESTION DE LA VOIX TTS NATIVE ---
-        function findFrenchVoice() {
-            if (!('speechSynthesis' in window)) return null;
-            
-            const voices = window.speechSynthesis.getVoices();
-            let voice = voices.find(v => v.lang === 'fr-FR') || voices.find(v => v.lang.startsWith('fr'));
-            
-            if (!voice) {
-                voice = voices.find(v => v.default);
-            }
-            if (!voice && voices.length > 0) {
-                voice = voices[0];
-            }
-            return voice;
-        }
-
-        function initializeVoicesReliably() {
-            frenchVoice = findFrenchVoice();
-            
-            if (window.speechSynthesis.onvoiceschanged === null) {
-                window.speechSynthesis.onvoiceschanged = () => {
-                    frenchVoice = findFrenchVoice();
-                };
-            }
-            if (frenchVoice === null && window.speechSynthesis.getVoices().length === 0) {
-                 const tempUtterance = new SpeechSynthesisUtterance(' ');
-                 tempUtterance.lang = 'fr-FR';
-                 window.speechSynthesis.speak(tempUtterance);
-                 window.speechSynthesis.cancel();
-            }
-        }
-        
-        initializeVoicesReliably();
-
-        // --- LOGIQUE DE CENSURE ---
-        /**
-         * Vérifie si le mot saisi est présent dans la liste des mots bannis.
-         */
-        function isWordBanned(word) {
-            if (!word) return false;
-            // Nettoyer et convertir en minuscules pour la comparaison
-            const normalizedWord = word.trim().toLowerCase();
-            return BANNED_WORDS.includes(normalizedWord);
-        }
-
-        /**
-         * Met à jour le libellé du bouton de bascule.
-         */
-        function updateToggleLabel() {
-            if (isHandwritingMode) {
-                // Mode actuel : Manuscrit. On propose de retourner à Imprimé.
-                toggleBtn.innerHTML = printedLabelHTML; 
-                toggleBtn.classList.remove('bg-green-100', 'hover:bg-green-200', 'text-green-800', 'border-green-400');
-                toggleBtn.classList.add('bg-indigo-100', 'hover:bg-indigo-200', 'text-indigo-600', 'border-indigo-300');
-            } else {
-                // Mode actuel : Imprimé. On propose de passer à Manuscrit.
-                toggleBtn.innerHTML = handwritingLabelHTML; 
-                toggleBtn.classList.remove('bg-indigo-100', 'hover:bg-indigo-200', 'text-indigo-600', 'border-indigo-300');
-                toggleBtn.classList.add('bg-green-100', 'hover:bg-green-200', 'text-green-800', 'border-green-400');
-            }
-        }
+        const ttsReadButton = document.getElementById('tts-read-button');
+        const ttsStopButton = document.getElementById('tts-stop-button');
         
         /**
-         * Bascule le style de police de l'affichage des touches de la grille.
-         */
-        function updateGridDisplay() {
-            const spans = document.querySelectorAll('.char-display');
-            spans.forEach(span => {
-                span.classList.toggle('handwriting-font-on-button', isHandwritingMode);
-            });
-        }
-        
-        // --- GESTION DU MODE ÉCRITURE MANUSCRITE ---
-        window.toggleHandwritingMode = function() {
-            isHandwritingMode = !isHandwritingMode;
-            
-            // 1. Mise à jour du champ de texte (Style manuscrit)
-            textInput.classList.toggle('handwriting-mode', isHandwritingMode);
-
-            // 2. Mise à jour de l'affichage des boutons de la grille
-            updateGridDisplay();
-
-            // 3. Mise à jour du bouton de bascule
-            updateToggleLabel();
-            
-            // 4. Si on change de mode, effacer le contenu pour éviter les incohérences de casse
-            clearText();
-            window.displayMessage(isHandwritingMode ? "Mode Écriture Manuscrite (affichage et insertion minuscules) activé." : "Mode Écriture Imprimée (affichage et insertion majuscules) activé.", false);
-        }
-        
-        // --- GESTION DU MODE VOCAL MP3 (TTS vs MP3) ---
-        window.toggleVocalMode = function() {
-            isVocalMP3Mode = !isVocalMP3Mode;
-            
-            // 1. Annuler toute lecture en cours (TTS ou MP3)
-            window.speechSynthesis.cancel();
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
-
-            // Mise à jour de l'emoji et des classes CSS
-            if (isVocalMP3Mode) {
-                // Passage en mode MP3 Vocal (Haut-parleur actif)
-                vocalEmojiSpan.textContent = EMOJI_MP3;
-                vocalToggleBtn.classList.remove('tts-active');
-                vocalToggleBtn.classList.add('mp3-active');
-                window.displayMessage("Mode Vocal Personnalisé (MP3) ACTIF. Le clic sur une lettre jouera un MP3 depuis GitHub. (Utilise un repli TTS si l'audio MP3 est manquant)", false);
-                
-                // Vider la queue TTS et arrêter le traitement
-                ttsQueue = [];
-                isProcessingQueue = false;
-                setLoadingTTS(false);
-
-            } else {
-                // Passage en mode TTS Natif (Oreille active)
-                vocalEmojiSpan.textContent = EMOJI_TTS;
-                vocalToggleBtn.classList.remove('mp3-active');
-                vocalToggleBtn.classList.add('tts-active');
-                window.displayMessage("Mode Synthèse Vocale (TTS) ACTIF. Le clic sur une lettre utilisera la voix native.", false);
-            }
-            
-            // Assurez-vous que le bouton de lecture générale (speak-btn) reflète l'état correct
-            updateButtonStates(textInput.value);
-        }
-
-        /**
-         * Cherche la minuscule correspondante pour un caractère accentué majuscule.
-         */
-        function getLowerAccent(char) {
-            const index = accentedCharsMaj.indexOf(char);
-            return index !== -1 ? accentedCharsMin[index] : char;
-        }
-
-
-        /**
-         * Construit et affiche la grille de l'Alphabet.
-         */
-        function initializeGrid() {
-            letterGrid.innerHTML = ''; 
-            specialCharGrid.innerHTML = ''; 
-            gridButtons = []; 
-
-            // 1. Peupler la grille de l'Alphabet (A-Z)
-            alphabet.split('').forEach(char => {
-                const button = createGridButton(char, 'btn-letter');
-                letterGrid.appendChild(button);
-                gridButtons.push(button);
-            });
-
-            // 2. Peupler la grille des Caractères Spéciaux
-            accentedCharsMaj.forEach(char => {
-                const button = createGridButton(char, 'btn-special');
-                specialCharGrid.appendChild(button);
-                gridButtons.push(button);
-            });
-
-            updateToggleLabel(); // Initialiser le libellé du bouton au chargement
-            updateGridDisplay(); // Appliquer le style initial
-            
-            // Initialisation de l'état vocal (MP3 par défaut)
-            if (isVocalMP3Mode) {
-                vocalEmojiSpan.textContent = EMOJI_MP3;
-                vocalToggleBtn.classList.add('mp3-active');
-            } else {
-                 vocalEmojiSpan.textContent = EMOJI_TTS;
-                 vocalToggleBtn.classList.add('tts-active');
-            }
-        }
-
-        /**
-         * Crée un bouton pour la grille.
-         */
-        function createGridButton(char, typeClass) {
-            const button = document.createElement('button');
-            
-            // Déterminer le caractère minuscule à afficher
-            let lowerChar;
-            if (alphabet.includes(char)) {
-                lowerChar = char.toLowerCase();
-            } else {
-                lowerChar = getLowerAccent(char);
-            }
-            
-            // Les spans ont la classe 'char-display' qui sera basculée par JS
-            button.innerHTML = `
-                <span class="char-upper char-display">${char}</span>
-                <span class="char-lower char-display">${lowerChar}</span>
-            `;
-            
-            const buttonClass = `p-3 font-bold rounded-lg hover:opacity-80 active:opacity-60 ${typeClass}`;
-
-            button.className = buttonClass;
-            button.dataset.char = char; // Stocker le caractère MAJUSCULE à l'origine
-            button.onclick = () => appendLetterAndSpeak(char); 
-            return button;
-        }
-
-
-        /**
-         * Affiche un message d'information ou d'erreur dans la zone dédiée.
+         * Affiche un message d'information ou d'erreur.
+         * @param {string} message Le texte à afficher.
+         * @param {boolean} isError Vrai si c'est un message d'erreur, faux sinon.
          */
         window.displayMessage = function(message, isError) {
+            const messageArea = document.getElementById('message-area');
             if (message) {
                 messageArea.textContent = message;
-                messageArea.classList.remove('hidden', 'bg-red-100', 'border-red-300', 'text-red-800', 'bg-yellow-100', 'border-yellow-300', 'text-yellow-800');
-                
-                if (isError) {
-                    messageArea.classList.add('bg-red-100', 'border-red-300', 'text-red-800');
-                } else {
-                    messageArea.classList.add('bg-yellow-100', 'border-yellow-300', 'text-yellow-800');
-                }
+                messageArea.classList.remove('hidden', 'message-success', 'message-error');
+                messageArea.classList.add(isError ? 'message-error' : 'message-success');
+                setTimeout(() => {
+                    messageArea.classList.add('hidden');
+                }, 5000);
             } else {
                 messageArea.classList.add('hidden');
             }
         }
-        
+
         /**
-         * Met à jour l'état de tous les boutons d'action.
+         * Vérifie si un mot est sur la liste de censure.
+         * @param {string} word Le mot à vérifier.
+         * @returns {boolean} Vrai si le mot est banni.
          */
-        window.updateButtonStates = function(value) {
-            const trimmedValue = value.trim();
-            const wordPresent = trimmedValue.length > 0;
-            // On vérifie le premier mot seulement pour la censure (car l'IA ne gère qu'un mot)
-            const firstWord = trimmedValue.split(/\s+/).filter(w => w.length > 0)[0] || '';
-            const isMultiWord = trimmedValue.split(/\s+/).filter(w => w.length > 0).length > 1;
-            
-            // NOUVEAU: Vérification de la censure
-            const isBanned = isWordBanned(firstWord);
-
-            // Logique pour le bouton TTS (Parler)
-            const speakDisabled = isSpeaking || !wordPresent || isAILoading; 
-            speakButton.disabled = speakDisabled;
-
-            // Logique pour le bouton IA (Doit être désactivé si banni ou multi-mot)
-            const aiDisabled = isAILoading || isSpeaking || !wordPresent || isMultiWord;
-            aiButton.disabled = aiDisabled;
-            
-            // Mise à jour du placeholder pour guider l'utilisateur
-            textInput.placeholder = (aiDisabled && isMultiWord) ? 
-                "Veuillez entrer un seul mot pour la définition IA..." : 
-                "Le texte s'affiche ici... (Max 1 mot pour la définition IA)";
-            
-            // Mise à jour du libellé du bouton IA si le mot est banni
-            if (isBanned && !isMultiWord) {
-                 aiText.textContent = 'Mot Banni (IA Bloquée)';
-                 aiButton.disabled = false; // Permettre le clic pour voir le message de censure
-                 aiButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                 aiButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-            } else if (isAILoading) {
-                 aiText.textContent = 'Chargement...';
-                 aiButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-                 aiButton.classList.add('bg-purple-600', 'hover:bg-purple-700');
-            } else {
-                 aiText.textContent = 'Définition & Exemple (IA)';
-                 aiButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-                 aiButton.classList.add('bg-purple-600', 'hover:bg-purple-700');
-            }
-
-            // Mise à jour du libellé du bouton Parler
-            if (isBanned && !isSpeaking) {
-                 speakText.textContent = 'Mot Banni (Lire)';
-                 speakButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                 speakButton.classList.remove('bg-green-600', 'hover:bg-green-700');
-            } else if (isSpeaking) {
-                 speakText.textContent = 'En cours...';
-                 speakButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-                 speakButton.classList.add('bg-green-600', 'hover:bg-green-700');
-            } else {
-                 speakText.textContent = 'Parler';
-                 speakButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-                 speakButton.classList.add('bg-green-600', 'hover:bg-green-700');
-            }
-        }
-
-        function setLoadingTTS(isLoading) {
-            isSpeaking = isLoading;
-            updateButtonStates(textInput.value);
-        }
-        
-        function setLoadingAI(isLoading) {
-            isAILoading = isLoading;
-            updateButtonStates(textInput.value);
-            
-            if (isLoading) {
-                // Masquer la réponse précédente et afficher un indicateur
-                aiResponseArea.classList.remove('hidden');
-                aiContent.innerHTML = '<div class="flex justify-center items-center"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-8 w-8"></div><span class="ml-3 text-gray-600">Recherche de la définition...</span></div>';
-                aiSources.innerHTML = '';
-            } else if (aiContent.innerHTML.trim() === '') {
-                 // Masquer si la requête est terminée mais qu'il n'y a pas de contenu
-                 aiResponseArea.classList.add('hidden');
-            }
+        function isWordBanned(word) {
+            return BANNED_WORDS.includes(word.toLowerCase());
         }
 
         /**
-         * Parle un morceau de texte unique en utilisant la voix TTS native, sans gérer la file d'attente.
-         * Utile pour la censure ou le mode fallback MP3.
+         * Gère l'état de chargement pour les appels IA.
+         * @param {boolean} loading
+         */
+        function setLoadingAI(loading) {
+            isAILoading = loading;
+            // Optionnel: Désactiver des boutons ou afficher un spinner
+        }
+
+        /**
+         * Affiche la réponse de l'IA.
+         * @param {string} text La réponse formatée.
+         * @param {Array<Object>} sources Les sources trouvées.
+         */
+        function displayAIResponse(text, sources) {
+            aiResponseArea.classList.remove('hidden');
+            // Assurez-vous que le texte est correctement affiché (gestion des retours à la ligne)
+            aiContent.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+
+            aiSources.innerHTML = '';
+            if (sources && sources.length > 0) {
+                aiSources.innerHTML = 'Sources: ' + sources.map((s, index) => 
+                    `<a href="${s.uri}" target="_blank" class="source-link" title="${s.title}">${index + 1}</a>`
+                ).join(' ');
+            }
+            
+            ttsReadButton.disabled = false;
+            ttsStopButton.disabled = true;
+        }
+
+        // --- Fonctions de Synthèse Vocale (TTS) ---
+
+        /**
+         * Lit le texte de l'IA en utilisant la synthèse vocale.
          * @param {string} text Le texte à lire.
          */
-        function speakWithTTS(text) {
-            // 1. Nettoyage de l'état audio
+        function readAIResponse(text) {
             window.speechSynthesis.cancel();
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
-            setLoadingTTS(true);
-
-            function attemptSpeak() {
-                // Tenter de re-trouver la voix juste avant de parler
-                if (frenchVoice === null) {
-                    frenchVoice = findFrenchVoice();
-                }
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'fr-FR'; 
-                if (frenchVoice) { utterance.voice = frenchVoice; }
-
-                utterance.onend = () => {
-                    setLoadingTTS(false);
-                };
-                
-                utterance.onerror = (event) => {
-                    // Log plus explicite en cas d'échec du TTS
-                    console.error('Erreur de lecture TTS native (fallback) - Tentative échouée:', event, `Texte: ${text}`);
-                    setLoadingTTS(false);
-                    //window.displayMessage(`Avertissement TTS: Lecture du mot '${text.substring(0, 15)}...' échouée.`, true);
-                };
-                
-                try {
-                    // Tenter de parler
-                    window.speechSynthesis.speak(utterance);
-                } catch (e) {
-                    console.error("Erreur critique lors de l'appel à speechSynthesis.speak() :", e);
-                    setLoadingTTS(false);
-                    window.displayMessage(`Erreur interne TTS: Impossible de démarrer la synthèse vocale pour '${text.substring(0, 15)}...'.`, true);
-                }
-            }
-
-            // Utilisez un petit délai (50ms) pour garantir que le contexte du navigateur est prêt,
-            // surtout après une autre tentative audio (MP3 ou TTS en erreur).
-            setTimeout(attemptSpeak, 50);
-        }
-        
-        /**
-         * Traite le prochain élément de la file d'attente TTS.
-         */
-        function processQueue() {
-            // Si la queue est vide ou si un traitement est déjà en cours, on arrête.
-            if (ttsQueue.length === 0 || isProcessingQueue) {
-                isProcessingQueue = false;
-                setLoadingTTS(false);
-                return;
-            }
-            
-            /*// Si le mode MP3 est actif, on ne fait rien pour le TTS natif.
-            if (isVocalMP3Mode) {
-                 ttsQueue = [];
-                 isProcessingQueue = false;
-                 setLoadingTTS(false);
-                 return;
-            }
-           */
-            isProcessingQueue = true;
-            
-            const { text } = ttsQueue[0]; 
-
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'fr-FR'; 
-            
-            // Tenter de re-trouver la voix juste avant de parler
-            if (frenchVoice === null) {
-                frenchVoice = findFrenchVoice();
-            }
-            if (frenchVoice) { utterance.voice = frenchVoice; }
-            
-            // Lancer la lecture
+            const voices = window.speechSynthesis.getVoices();
+            // Tenter de trouver une voix française
+            utterance.voice = voices.find(voice => voice.lang === 'fr-FR') || voices[0];
+            utterance.rate = 0.9; // Vitesse de lecture légèrement réduite
+
+            utterance.onstart = () => {
+                ttsReadButton.disabled = true;
+                ttsStopButton.disabled = false;
+            };
+
             utterance.onend = () => {
-                ttsQueue.shift(); // Retire le premier élément
-                isProcessingQueue = false;
-                processQueue(); // Passe à l'élément suivant
+                ttsReadButton.disabled = false;
+                ttsStopButton.disabled = true;
             };
-            
+
             utterance.onerror = (event) => {
-                console.error('Erreur de lecture TTS native:', event);
-                // En cas d'erreur, on retire quand même l'élément pour débloquer la queue
-                ttsQueue.shift(); 
-                isProcessingQueue = false;
-                processQueue();
+                window.displayMessage(`Erreur de lecture TTS : ${event.error}`, true);
+                ttsReadButton.disabled = false;
+                ttsStopButton.disabled = true;
             };
-            
-            try {
-                // Lancer la lecture
-                window.speechSynthesis.speak(utterance);
-            } catch (e) {
-                console.error("Erreur critique lors de l'appel à speechSynthesis.speak() dans la queue :", e);
-                // Si l'appel a échoué immédiatement, on retire l'élément et on passe au suivant
-                ttsQueue.shift(); 
-                isProcessingQueue = false;
-                processQueue();
-            }
+
+            window.speechSynthesis.speak(utterance);
         }
 
         /**
-         * Tente de charger et de jouer un fichier MP3, avec FALLBACK TTS en cas d'échec.
-         * @param {string} url L'URL complète du fichier MP3.
-         * @param {string} charOrWord Le caractère ou le mot à prononcer (utilisé pour le fallback et le message).
+         * Arrête la lecture TTS en cours.
          */
-        function playMP3(url, charOrWord) {
-            // Annuler la lecture TTS et remettre le bouton à Parler avant de jouer
+        function stopTTS() {
             window.speechSynthesis.cancel();
-            setLoadingTTS(false); 
-            
-            audioPlayer.src = url;
-            
-            // Écouteur d'erreur pour ce chargement (par exemple, 404/MIME)
-            function handleMP3Error() {
-                audioPlayer.removeEventListener('error', handleMP3Error);
-                console.error(`MP3 Playback Error: Failed to load '${url}'.`, { url, charOrWord });
-                
-                // *** FALLBACK EN TTS NATIVE ***
-               // //window.displayMessage(`Échec de lecture MP3 pour '${charOrWord.toUpperCase()}'. Lecture en voix native (TTS) activée.`, true);
-                
-                // Trouver le texte phonétique à lire pour le TTS
-                // On utilise la majuscule du caractère (ou du premier caractère du mot) pour chercher la description
-                const key = charOrWord.length > 1 ? charOrWord.toUpperCase() : charOrWord.toUpperCase().charAt(0);
-                const textToSpeak = charDescriptions[key] || charOrWord;
-                
-                speakWithTTS(textToSpeak); // Utiliser la voix native
-            }
-            audioPlayer.addEventListener('error', handleMP3Error);
-
-            audioPlayer.load();
-
-            // Tenter de jouer
-            audioPlayer.play().then(() => {
-                // Lecture réussie (on retire l'écouteur d'erreur pour éviter les faux positifs futurs)
-                audioPlayer.removeEventListener('error', handleMP3Error);
-                window.displayMessage(`Mode MP3 ACTIF : Lecture du son pour '${charOrWord.toUpperCase()}' en cours.`, false);
-            }).catch(e => {
-                // Erreur de play() (par exemple, interaction utilisateur requise ou problème du navigateur)
-                console.error("Erreur de play() MP3:", e.message || e);
-                // Si l'erreur est liée au chargement (404/MIME), handleMP3Error est déjà appelé.
-                // Sinon, si le navigateur n'a pas pu trouver la source du tout, force le fallback.
-                if (audioPlayer.networkState === audioPlayer.NETWORK_NO_SOURCE) {
-                    handleMP3Error(); 
-                }
-            });
+            ttsReadButton.disabled = false;
+            ttsStopButton.disabled = true;
         }
 
+        // --- Logique de l'IA (Fonction sécurisée) ---
 
         /**
-         * Ajout d'une lettre et déclenchement de la lecture.
+         * Appelle l'API Gemini pour obtenir une définition et un exemple pour le mot donné.
+         * Le code utilise la Netlify Function pour sécuriser la clé API.
          */
-        window.appendLetterAndSpeak = function(char) {
-            let charToInsert = char; // Par défaut, la majuscule
-
-            // --- Logique d'insertion de la Casse ---
-            if (isHandwritingMode) {
-                 // Mode Manuscrit : on insère la minuscule correspondante
-                if (alphabet.includes(char)) {
-                     charToInsert = char.toLowerCase();
-                } else if (accentedCharsMaj.includes(char)) {
-                     charToInsert = getLowerAccent(char);
-                }
-            }
-
-            textInput.value += charToInsert;
-            updateButtonStates(textInput.value);
-
-            // Si le mode Vocal MP3 est actif, on lit le MP3 du caractère
-            if (isVocalMP3Mode) {
-                 // 1. Annuler la lecture en cours au cas où un autre MP3 est joué
-                 audioPlayer.pause();
-                 audioPlayer.currentTime = 0;
-                 
-                 const charToFind = charToInsert.toLowerCase(); // Utiliser la minuscule pour le nom de fichier (ex: 'a.mp3')
-                 
-                 // Construction de l'URL pour TOUS les caractères (lettres et accents)
-                 const mp3Url = MP3_BASE_URL + charToFind + ".mp3";
-                 
-                 // Utiliser la nouvelle fonction plus robuste avec fallback
-                 playMP3(mp3Url, charToFind);
-
-                 return; // Arrêter la lecture TTS
-            }
-
-            // --- LOGIQUE TTS NATIVE (FALLBACK) ---
-            // Charger la voix si nécessaire
-            if (frenchVoice === null) {
-                frenchVoice = findFrenchVoice();
-            }
-            
-            // On utilise la valeur de charDescriptions pour la lecture TTS
-            let textToSpeak = charDescriptions[char] || char; 
-            
-            // AJOUT À LA FILE D'ATTENTE TTS NATIVE
-            ttsQueue.push({ text: textToSpeak, isWord: false, isCharDescription: true });
-            
-            // Si le traitement n'est pas déjà en cours, on le lance
-            if (!isProcessingQueue) {
-                setLoadingTTS(true); // Indiquer que la lecture a commencé
-                processQueue();
-            }
-        }
-
-        window.clearText = function() {
-            textInput.value = '';
-            
-            // Arrêter toute lecture en cours (TTS et MP3)
-            window.speechSynthesis.cancel();
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
-            
-            // VIDER LA QUEUE lors de l'effacement
-            ttsQueue = [];
-            isProcessingQueue = false;
-            
-            setLoadingTTS(false);
-            setLoadingAI(false);
-            updateButtonStates('');
-            window.displayMessage("", false); 
-            aiResponseArea.classList.add('hidden'); // Masquer la zone IA
-            aiContent.innerHTML = '';
-            aiSources.innerHTML = '';
-        }
-
-        /**
-         * Gère la lecture du mot complet avec Censure.
-         */
-        window.generateAndPlayWordAudio = function() {
-            if (isSpeaking) return;
-
-            const textToSpeak = textInput.value.trim();
-            if (textToSpeak === '') {
-                window.displayMessage("Veuillez saisir du texte ou cliquer sur les lettres.", false);
-                return;
-            }
-            
-            const firstWord = textToSpeak.split(/\s+/).filter(w => w.length > 0)[0] || '';
+        window.fetchGeminiDefinition = async function(word) {
+            const wordToSearch = word.trim();
+            const firstWord = wordToSearch.split(/\s+/).filter(w => w.length > 0)[0] || '';
 
             // 1. VÉRIFICATION DE LA CENSURE
             if (isWordBanned(firstWord)) {
-                window.displayMessage("Censure: La lecture de ce mot est bloquée.", true);
-                
-                // Jouer un message de censure au lieu du mot
-                const censoredMessage = "Mot banni. Veuillez choisir un autre mot.";
-                
-                // Arrêter toute lecture en cours (TTS et MP3)
-                window.speechSynthesis.cancel();
-                audioPlayer.pause();
-                audioPlayer.currentTime = 0;
-                ttsQueue = [];
-                isProcessingQueue = false;
-                
-                // Utiliser la fonction simple TTS pour le message de censure (pas besoin de la queue)
-                speakWithTTS(censoredMessage);
+                window.displayMessage("Censure: La définition et l'exemple pour ce mot sont bloqués.", true);
+                aiResponseArea.classList.remove('hidden');
+                aiContent.innerHTML = `<h3 class="text-xl font-bold mb-2 text-red-700">${firstWord.toUpperCase()}</h3><p class="text-red-600 font-semibold">Le mot '${firstWord}' figure sur la liste des mots bannis. La recherche de définition est bloquée par mesure de sécurité.</p>`;
+                aiSources.innerHTML = '';
+                setLoadingAI(false);
                 return;
             }
             
-            // 2. LECTURE EN MODE MP3
-            if (isVocalMP3Mode) {
-                 // 1. Annuler la lecture en cours au cas où un autre MP3 est joué
-                 audioPlayer.pause();
-                 audioPlayer.currentTime = 0;
-                 
-                 // Logique pour un mot complet : Supprime tout ce qui n'est pas lettre ou accent (pour correspondre au nom de fichier)
-                 const mp3FileName = textToSpeak.toLowerCase().replace(/[^a-z0-9éèêëàâùûîïôöœç]/g, ''); 
-                 const mp3Url = MP3_BASE_URL + mp3FileName + ".mp3";
-                 
-                 // Utiliser la nouvelle fonction plus robuste avec fallback
-                 playMP3(mp3Url, mp3FileName);
-                 return;
+            // 2. VÉRIFICATION (Le code client n'a plus besoin de la clé, elle est gérée par le serveur)
+            if (!wordToSearch || isAILoading) return;
+            
+            const words = wordToSearch.split(/\s+/).filter(w => w.length > 0);
+            if (words.length > 1) {
+                window.displayMessage("Veuillez saisir un seul mot pour la recherche de définition.", true);
+                return;
             }
 
-
-            // 3. LECTURE EN MODE TTS NATIVE
-            if (frenchVoice === null) {
-                frenchVoice = findFrenchVoice();
-            }
-
-            // Annuler toute lecture en cours et vider la queue de caractères
-            window.speechSynthesis.cancel();
-            ttsQueue = [];
-            isProcessingQueue = false;
-
-            // Mettre le bouton en mode 'En cours...'
-            setLoadingTTS(true);
-            
-            // Ajouter le mot complet à la queue 
-            ttsQueue.push({ text: textToSpeak, isWord: true, isCharDescription: false }); 
-            
-            // Lancer le traitement de la queue
-            processQueue();
-        }
-        
-        
-        /**
-         * Gère l'affichage de la réponse de l'IA (texte formaté et sources) ET déclenche la lecture.
-         */
-        function displayAIResponse(rawText, sources) {
-            aiResponseArea.classList.remove('hidden');
-            
-            const word = textInput.value.trim().toUpperCase();
-            
-            // Formater le texte pour l'affichage (remplacer les \n par des <br>)
-            let formattedText = rawText.replace(/Définition:\s*/, '<b>Définition :</b> ').replace(/Exemple:\s*/, '<br><br><b>Exemple :</b> ');
-            formattedText = formattedText.replace(/\n/g, '<br>');
-
-            aiContent.innerHTML = `
-                <h3 class="text-xl font-bold mb-2 text-purple-700">${word}</h3>
-                <p class="text-gray-700">${formattedText}</p>
-            `;
-            
-            if (sources && sources.length > 0) {
-                let sourcesHtml = 'Sources : ';
-                sources.forEach((source, index) => {
-                    sourcesHtml += `<a href="${source.uri}" target="_blank" class="text-blue-500 hover:underline">${source.title}</a>${index < sources.length - 1 ? ' | ' : ''}`;
-                });
-                aiSources.innerHTML = sourcesHtml;
-            } else {
-                aiSources.innerHTML = 'Source : Aucune source web utilisée.';
-            }
-
-            // *** Déclenchement de la lecture de la réponse de l'IA ***
-            // La lecture de la définition n'est déclenchée que si le mot n'est PAS banni.
-            const textToRead = `${word}. Voici la définition. ${rawText.replace(/\n/g, '. ')}`;
-            
-            // 1. Vider toute queue en cours (TTS et MP3)
+            // Arrêter toute lecture en cours 
             window.speechSynthesis.cancel();
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
             ttsQueue = [];
             isProcessingQueue = false;
             
-            // 2. Mettre le mot à lire dans la queue
-            ttsQueue.push({ text: textToRead, isWord: true, isCharDescription: false });
+            setLoadingAI(true);
+            window.displayMessage("", false); 
             
-            // 3. Lancer la lecture (avec un petit délai pour la stabilité)
-            setTimeout(() => {
-                setLoadingTTS(true);
-                processQueue(); 
-            }, 50); 
+            const systemPrompt = "Vous êtes un tuteur de vocabulaire pour enfants et un expert en langue française. Fournissez une courte définition simple et un exemple d'utilisation du mot demandé. Formatez la réponse avec 'Définition: [votre définition]\\nExemple: [votre exemple]'. La réponse doit être en français. Ne proposez aucun autre dialogue ou texte que la définition et l'exemple.";
+            const userQuery = `Donnez une définition et un exemple pour le mot : ${wordToSearch}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            const maxRetries = 3;
+            let currentDelay = 1000; 
+            
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    // *** APPEL À LA NETLIFY FUNCTION ***
+                    // Utilise l'URL relative /netlify/functions/gemini
+                    const response = await fetch(GEMINI_FUNCTION_URL, { 
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 429) {
+                        if (i < maxRetries - 1) {
+                            await new Promise(resolve => setTimeout(resolve, currentDelay));
+                            currentDelay *= 2; 
+                            continue; 
+                        } else {
+                            throw new Error("Taux de requêtes API dépassé après plusieurs tentatives.");
+                        }
+                    }
+
+                    if (!response.ok) {
+                        // Tenter de lire le corps de l'erreur
+                        const errorBody = await response.text(); 
+                        
+                        // Si le statut est 500 et qu'il y a du JSON (erreur de clé serveur)
+                        try {
+                             const jsonError = JSON.parse(errorBody);
+                             throw new Error(`Erreur de l'API (via Serveur) : ${jsonError.error || response.statusText}`);
+                        } catch (e) {
+                            // Erreur HTML (dépendance manquante, 404 de la fonction) ou JSON mal formé
+                            throw new Error(`Erreur de l'API (via Serveur) : Statut ${response.status}. Vérifiez la console pour l'erreur brute.`);
+                        }
+                    }
+
+                    // La fonction Netlify retourne la réponse JSON directe de l'IA
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        const text = candidate.content.parts[0].text;
+                        
+                        let sources = [];
+                        const groundingMetadata = candidate.groundingMetadata;
+                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                            sources = groundingMetadata.groundingAttributions
+                                .map(attribution => ({
+                                    uri: attribution.web?.uri,
+                                    title: attribution.web?.title,
+                                }))
+                                .filter(source => source.uri && source.title);
+                        }
+
+                        displayAIResponse(text, sources);
+                        setLoadingAI(false);
+                        return; // Success
+                    } else {
+                        throw new Error("Réponse de l'IA vide ou mal formée.");
+                    }
+
+                } catch (error) {
+                    console.error("Erreur Gemini (Via Serveur):", error);
+                    window.displayMessage(`Impossible de récupérer la définition : ${error.message}.`, true);
+                    setLoadingAI(false);
+                    return; // Exit after failure
+                }
+            }
         }
 
-       /**
- * Appelle l'API Gemini pour obtenir une définition et un exemple pour le mot donné.
- */
-window.fetchGeminiDefinition = async function(word) {
-    const wordToSearch = word.trim();
-    const firstWord = wordToSearch.split(/\s+/).filter(w => w.length > 0)[0] || '';
 
-    // 1. VÉRIFICATION DE LA CENSURE
-    if (isWordBanned(firstWord)) {
-        window.displayMessage("Censure: La définition et l'exemple pour ce mot sont bloqués.", true);
-        aiResponseArea.classList.remove('hidden');
-        aiContent.innerHTML = `<h3 class="text-xl font-bold mb-2 text-red-700">${firstWord.toUpperCase()}</h3><p class="text-red-600 font-semibold">Le mot '${firstWord}' figure sur la liste des mots bannis. La recherche de définition est bloquée par mesure de sécurité.</p>`;
-        aiSources.innerHTML = '';
-        setLoadingAI(false);
-        return;
-    }
-    
-    // 2. VÉRIFICATION DE L'API (Utilise la Netlify Function)
-    // Plus besoin de vérifier la clé ici, car elle est gérée côté serveur (Netlify Function).
+        // --- Logique de lecture MP3 et de la grille ---
 
-    if (!wordToSearch || isAILoading) return;
-    
-    const words = wordToSearch.split(/\s+/).filter(w => w.length > 0);
-    if (words.length > 1) {
-        window.displayMessage("Veuillez saisir un seul mot pour la recherche de définition.", true);
-        return;
-    }
-
-    // Arrêter toute lecture en cours 
-    window.speechSynthesis.cancel();
-    audioPlayer.pause();
-    audioPlayer.currentTime = 0;
-    ttsQueue = [];
-    isProcessingQueue = false;
-    
-    setLoadingAI(true);
-    window.displayMessage("", false); 
-    
-    const systemPrompt = "Vous êtes un tuteur de vocabulaire pour enfants et un expert en langue française. Fournissez une courte définition simple et un exemple d'utilisation du mot demandé. Formatez la réponse avec 'Définition: [votre définition]\\nExemple: [votre exemple]'. La réponse doit être en français. Ne proposez aucun autre dialogue ou texte que la définition et l'exemple.";
-    const userQuery = `Donnez une définition et un exemple pour le mot : ${wordToSearch}`;
-
-    const payload = {
-        contents: [{ parts: [{ text: userQuery }] }],
-        tools: [{ "google_search": {} }],
-        systemInstruction: {
-            parts: [{ text: systemPrompt }]
-        },
-    };
-
-    const maxRetries = 3;
-    let currentDelay = 1000; 
-    
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            // *** APPEL À LA NETLIFY FUNCTION ***
-            const response = await fetch(GEMINI_FUNCTION_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+        /**
+         * Joue un fichier MP3 à partir d'un nom de mot/lettre.
+         * @param {string} word Le mot ou la lettre.
+         */
+        function playMp3(word) {
+            if (!word) return;
+            
+            // Annuler la lecture en cours pour la synthèse vocale
+            window.speechSynthesis.cancel();
+            
+            const fileName = `${word.toLowerCase()}.mp3`;
+            const url = `${CHEMIN_DE_BASE_MP3_URL}${fileName}`;
+            
+            currentWordDisplay.textContent = `Lecture en cours: ${word}`;
+            
+            audioPlayer.src = url;
+            audioPlayer.play().catch(error => {
+                console.error("Erreur de lecture audio:", error);
+                window.displayMessage(`Erreur: Impossible de jouer le son pour "${word}". Le fichier "${fileName}" est peut-être manquant.`, true);
+                currentWordDisplay.textContent = "Erreur de lecture.";
             });
-
-            if (response.status === 429) {
-                if (i < maxRetries - 1) {
-                    await new Promise(resolve => setTimeout(resolve, currentDelay));
-                    currentDelay *= 2; 
-                    continue; 
-                } else {
-                    throw new Error("Taux de requêtes API dépassé après plusieurs tentatives.");
-                }
-            }
-
-            if (!response.ok) {
-                // Si la fonction Netlify retourne une erreur, elle contient un JSON
-                const errorBody = await response.json(); 
-                throw new Error(`Erreur de l'API (via Serveur) : ${errorBody.error || response.statusText}`);
-            }
-
-            // La fonction Netlify retourne la réponse JSON directe de l'IA
-            const result = await response.json();
-            const candidate = result.candidates?.[0];
-
-            if (candidate && candidate.content?.parts?.[0]?.text) {
-                const text = candidate.content.parts[0].text;
-                
-                let sources = [];
-                const groundingMetadata = candidate.groundingMetadata;
-                if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                    sources = groundingMetadata.groundingAttributions
-                        .map(attribution => ({
-                            uri: attribution.web?.uri,
-                            title: attribution.web?.title,
-                        }))
-                        .filter(source => source.uri && source.title);
-                }
-
-                displayAIResponse(text, sources);
-                setLoadingAI(false);
-                return; // Success
-            } else {
-                throw new Error("Réponse de l'IA vide ou mal formée.");
-            }
-
-        } catch (error) {
-            console.error("Erreur Gemini:", error);
-            window.displayMessage(`Impossible de récupérer la définition : ${error.message}.`, true);
-            setLoadingAI(false);
-            return; // Exit after failure
         }
-    }
-}
 
+        /**
+         * Gère la lecture du mot suivant dans la file d'attente.
+         */
+        function playNextInQueue() {
+            if (ttsQueue.length > 0) {
+                const wordElement = ttsQueue.shift();
+                if (wordElement) {
+                    currentWordElement = wordElement;
+                    const word = wordElement.getAttribute('data-word');
+                    playMp3(word);
+                    updateButtonState();
+                } else {
+                    playNextInQueue(); // Passer au mot suivant si l'élément est null
+                }
+            } else {
+                // File d'attente vide, fin de la lecture
+                isProcessingQueue = false;
+                playAllButton.textContent = 'Lire Tout';
+                currentWordDisplay.textContent = 'Prêt.';
+                updateButtonState();
+            }
+        }
 
+        /**
+         * Met à jour l'état des boutons de contrôle audio.
+         */
+        function updateButtonState() {
+            const hasNext = ttsQueue.length > 0;
+            playNextButton.disabled = !hasNext && !audioPlayer.seeking;
+            playAllButton.disabled = isProcessingQueue;
+        }
+
+        /**
+         * Initialise la grille des lettres/mots.
+         */
+        function initializeGrid() {
+            const letterGrid = document.getElementById('letter-grid');
+            const data = [
+                // Vos données originales sont ici
+                { type: 'letter', content: 'A', details: 'A comme Arbre' },
+                { type: 'letter', content: 'B', details: 'B comme Ballon' },
+                { type: 'letter', content: 'C', details: 'C comme Chat' },
+                { type: 'letter', content: 'D', details: 'D comme Domino' },
+                { type: 'letter', content: 'E', details: 'E comme Éléphant' },
+                { type: 'letter', content: 'F', details: 'F comme Fleur' },
+                { type: 'letter', content: 'G', details: 'G comme Girafe' },
+                { type: 'letter', content: 'H', details: 'H comme Hérisson' },
+                { type: 'letter', content: 'I', details: 'I comme Igloo' },
+                { type: 'letter', content: 'J', details: 'J comme Jupe' },
+                { type: 'letter', content: 'K', details: 'K comme Kangourou' },
+                { type: 'letter', content: 'L', details: 'L comme Lion' },
+                { type: 'letter', content: 'M', details: 'M comme Maison' },
+                { type: 'letter', content: 'N', details: 'N comme Nuage' },
+                { type: 'letter', content: 'O', details: 'O comme Orange' },
+                { type: 'letter', content: 'P', details: 'P comme Poisson' },
+                { type: 'letter', content: 'Q', details: 'Q comme Queue' },
+                { type: 'letter', content: 'R', details: 'R comme Rat' },
+                { type: 'letter', content: 'S', details: 'S comme Soleil' },
+                { type: 'letter', content: 'T', details: 'T comme Tigre' },
+                { type: 'letter', content: 'U', details: 'U comme Usine' },
+                { type: 'letter', content: 'V', details: 'V comme Vache' },
+                { type: 'letter', content: 'W', details: 'W comme Wagon' },
+                { type: 'letter', content: 'X', details: 'X comme Xylophone' },
+                { type: 'letter', content: 'Y', details: 'Y comme Yeux' },
+                { type: 'letter', content: 'Z', details: 'Z comme Zèbre' },
+                // Ajout de mots à titre d'exemple
+                { type: 'word', content: 'Table', details: 'Un objet' },
+                { type: 'word', content: 'Chaise', details: 'Pour s\'asseoir' },
+            ];
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'grid-item';
+                div.setAttribute('data-word', item.content);
+                div.setAttribute('data-details', item.details);
+                div.innerHTML = `
+                    <div class="letter">${item.content}</div>
+                    <div class="text-sm text-gray-500 mt-1">${item.details}</div>
+                    <span class="sound-icon">&#128266;</span>
+                    <button class="mt-2 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600" onclick="window.fetchGeminiDefinition('${item.content}')">
+                        Définition & Exemple (IA)
+                    </button>
+                `;
+                
+                div.addEventListener('click', (e) => {
+                    // Empêcher l'événement de se propager au bouton IA
+                    if (e.target.tagName !== 'BUTTON') {
+                        // Annuler la lecture en cours
+                        window.speechSynthesis.cancel();
+                        audioPlayer.pause();
+                        currentWordElement = div;
+                        playMp3(div.getAttribute('data-word'));
+                        document.querySelectorAll('.grid-item').forEach(el => el.classList.remove('active'));
+                        div.classList.add('active');
+                        document.getElementById('audio-controls').classList.remove('hidden');
+                    }
+                });
+                
+                letterGrid.appendChild(div);
+            });
+        }
+
+        // --- Événements et Initialisation ---
+
+        audioPlayer.onended = () => {
+            if (isProcessingQueue) {
+                playNextInQueue();
+            } else {
+                currentWordDisplay.textContent = 'Terminé.';
+                updateButtonState();
+            }
+        };
+
+        playNextButton.onclick = playNextInQueue;
+
+        playAllButton.onclick = () => {
+            // Recharger la queue avec tous les mots/lettres
+            ttsQueue = Array.from(document.querySelectorAll('.grid-item'));
+            isProcessingQueue = true;
+            playAllButton.textContent = 'En cours...';
+            playAllButton.disabled = true;
+            playNextInQueue();
+        };
+
+        ttsReadButton.onclick = () => {
+            const textToRead = aiContent.textContent;
+            if (textToRead) {
+                readAIResponse(textToRead);
+            }
+        };
+        
+        ttsStopButton.onclick = stopTTS;
+
+        // Assurez-vous d'initialiser la grille après que le DOM soit chargé.
         document.addEventListener('DOMContentLoaded', () => {
             initializeGrid();
-            updateButtonStates(textInput.value); // Initialiser l'état des boutons au chargement
-            
-            // Afficher le message initial pour le mode MP3 actif
-            if (isVocalMP3Mode) {
-                 window.displayMessage("Mode Vocal Personnalisé (MP3) ACTIF par défaut. Le clic sur une lettre jouera un MP3.", false);
-            }
         });
+
     </script>
+
 </body>
 </html>
