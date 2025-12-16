@@ -36,7 +36,6 @@
         .btn-letter { background-color: #bfdbfe; color: #1d4ed8; } 
         /* Style V4.5: Turquoise pour les accents/spéciaux */
         .btn-special { background-color: #e0f2f1; color: #00796b; } 
-import { GoogleGenAI } from "@google/genai";
 
         /* NOUVEAU STYLE: Positionnement des caractères */
         .char-display {
@@ -44,10 +43,6 @@ import { GoogleGenAI } from "@google/genai";
             font-family: 'Inter', sans-serif; /* Imprimé par défaut (Mode Normal) */
             transition: font-family 0.3s ease;
         }
-// TOUTE LA LOGIQUE, Y COMPRIS LES 'RETURN', DOIT ÊTRE ICI
-export async function handler(event, context) {
-    // Le 'return' à la ligne 62 et 68 que Netlify rejette
-    // doit être ici, dans le corps de la fonction.
 
         .char-upper {
             top: 0.25rem; /* Haut */
@@ -301,13 +296,8 @@ export async function handler(event, context) {
     <script type="text/javascript">
         
         // --- Configuration API Gemini ---
-        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
-        
-        // ***********************************************************************************
-        // ***********************************************************************************
-        // C'EST ICI QUE DOIT SE TROUVER LA CLÉ API GEMINI !
-        // Collez votre clé API ici, entre les guillemets :
-        const API_KEY = ""; 
+       // NOUVEAU : Le code client appelle maintenant la fonction Netlify.
+const GEMINI_FUNCTION_URL = "/.netlify/functions/gemini"; // Point d'accès de votre fonction
         // ***********************************************************************************
         // ***********************************************************************************
         
@@ -394,10 +384,6 @@ export async function handler(event, context) {
             // Compléter automatiquement les lettres restantes (D-Z) pour le TTS
             ...Object.fromEntries(alphabet.split('').filter(c => !['A', 'B', 'C'].includes(c)).map(c => [c, c])),
             ...Object.fromEntries(alphabet.toLowerCase().split('').filter(c => !['a', 'b', 'c'].includes(c)).map(c => [c, c])),
-    if (event.httpMethod !== 'POST') {
-        return {
-            statusCode: 405,
-            body: JSON.stringify({ error: "Method Not Allowed" })
         };
         // -------------------------------------------------------------
         
@@ -441,61 +427,20 @@ export async function handler(event, context) {
         let gridButtons = [];
         
         // --- GESTION DE LA VOIX TTS NATIVE ---
-function findFrenchVoice() {
-    if (!window.speechSynthesis) {
-        return null;
-    }
-
-    const desiredMaleVoiceNames = ["Thomas", "Antoine", "Aurélien", "Paul", "Félix", "Grandeur", "Microsoft Paul"];
-    let voice = null;
-
-    const voices = window.speechSynthesis.getVoices();
-
-    // 1. Essayer de trouver une voix masculine spécifique
-    for (let i = 0; i < voices.length; i++) {
-        if (voices[i].lang === 'fr-FR' && desiredMaleVoiceNames.includes(voices[i].name)) {
-            voice = voices[i];
-            break;
-        }
-    }
-
-    // 2. Sinon, chercher la première voix masculine française disponible
-    if (!voice) {
-        for (let i = 0; i < voices.length; i++) {
-            if (voices[i].lang === 'fr-FR' && (voices[i].name.includes('male') || voices[i].name.includes('masculin'))) {
-                voice = voices[i];
-                break;
+        function findFrenchVoice() {
+            if (!('speechSynthesis' in window)) return null;
+            
+            const voices = window.speechSynthesis.getVoices();
+            let voice = voices.find(v => v.lang === 'fr-FR') || voices.find(v => v.lang.startsWith('fr'));
+            
+            if (!voice) {
+                voice = voices.find(v => v.default);
             }
-        }
-    }
-    
-    // ... tout le reste de votre logique d'API
-    
-    try {
-        // ... votre appel à Gemini
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ /* ... réponse de Gemini ... */ })
-        };
-
-    // 3. Fallback : Si aucune voix spécifique n'est trouvée, prendre la première voix française
-    if (!voice) {
-        for (let i = 0; i < voices.length; i++) {
-            if (voices[i].lang === 'fr-FR') {
-                voice = voices[i];
-                break;
+            if (!voice && voices.length > 0) {
+                voice = voices[0];
             }
+            return voice;
         }
-    } catch (error) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message })
-        };
-    }
-
-    return voice;
-}
-
 
         function initializeVoicesReliably() {
             frenchVoice = findFrenchVoice();
@@ -1123,64 +1068,116 @@ function findFrenchVoice() {
             }, 50); 
         }
 
-        /**
-         * Appelle l'API Gemini pour obtenir une définition et un exemple pour le mot donné.
-         */
-        /**
-         * Appelle la Fonction Netlify pour récupérer la définition IA de manière sécurisée.
-         * Ce point d'appel proxy utilise la clé API stockée sur le serveur.
-         */
-        window.fetchGeminiDefinition = async function(word) {
-            
-            // 1. Vérification initiale (censure et mot simple)
-            const trimmedWord = word.trim();
-            const firstWord = trimmedWord.split(/\s+/).filter(w => w.length > 0)[0] || '';
+       /**
+ * Appelle l'API Gemini pour obtenir une définition et un exemple pour le mot donné.
+ */
+window.fetchGeminiDefinition = async function(word) {
+    const wordToSearch = word.trim();
+    const firstWord = wordToSearch.split(/\s+/).filter(w => w.length > 0)[0] || '';
 
-            if (isWordBanned(firstWord)) {
-                window.displayMessage(`Mot banni : Le mot '${firstWord}' ne peut pas être soumis à l'IA.`, true);
-                return;
-            }
-            if (trimmedWord.split(/\s+/).filter(w => w.length > 0).length > 1) {
-                window.displayMessage("Veuillez entrer un seul mot pour la définition IA.", true);
-                return;
-            }
-            if (!firstWord) return;
+    // 1. VÉRIFICATION DE LA CENSURE
+    if (isWordBanned(firstWord)) {
+        window.displayMessage("Censure: La définition et l'exemple pour ce mot sont bloqués.", true);
+        aiResponseArea.classList.remove('hidden');
+        aiContent.innerHTML = `<h3 class="text-xl font-bold mb-2 text-red-700">${firstWord.toUpperCase()}</h3><p class="text-red-600 font-semibold">Le mot '${firstWord}' figure sur la liste des mots bannis. La recherche de définition est bloquée par mesure de sécurité.</p>`;
+        aiSources.innerHTML = '';
+        setLoadingAI(false);
+        return;
+    }
+    
+    // 2. VÉRIFICATION DE L'API (Utilise la Netlify Function)
+    // Plus besoin de vérifier la clé ici, car elle est gérée côté serveur (Netlify Function).
 
-            setLoadingAI(true);
-            
-            // 2. Appel au point de terminaison sécurisé sur Netlify
-            try {
-                // L'URL /api/gemini-definition est notre Fonction Netlify (créée à l'Étape 2)
-                const response = await fetch('/.netlify/functions/index', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    // Nous envoyons le mot à la Fonction Netlify
-                    body: JSON.stringify({ word: firstWord }),
-                });
+    if (!wordToSearch || isAILoading) return;
+    
+    const words = wordToSearch.split(/\s+/).filter(w => w.length > 0);
+    if (words.length > 1) {
+        window.displayMessage("Veuillez saisir un seul mot pour la recherche de définition.", true);
+        return;
+    }
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `Erreur HTTP ${response.status} lors de l'appel à la Fonction Netlify.`);
-                }
+    // Arrêter toute lecture en cours 
+    window.speechSynthesis.cancel();
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+    ttsQueue = [];
+    isProcessingQueue = false;
+    
+    setLoadingAI(true);
+    window.displayMessage("", false); 
+    
+    const systemPrompt = "Vous êtes un tuteur de vocabulaire pour enfants et un expert en langue française. Fournissez une courte définition simple et un exemple d'utilisation du mot demandé. Formatez la réponse avec 'Définition: [votre définition]\\nExemple: [votre exemple]'. La réponse doit être en français. Ne proposez aucun autre dialogue ou texte que la définition et l'exemple.";
+    const userQuery = `Donnez une définition et un exemple pour le mot : ${wordToSearch}`;
 
-                const data = await response.json();
-                
-                // 3. Traitement de la réponse de la Fonction Netlify
-                if (data.text) {
-                    displayAIResponse(data.text, data.sources || []);
+    const payload = {
+        contents: [{ parts: [{ text: userQuery }] }],
+        tools: [{ "google_search": {} }],
+        systemInstruction: {
+            parts: [{ text: systemPrompt }]
+        },
+    };
+
+    const maxRetries = 3;
+    let currentDelay = 1000; 
+    
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            // *** APPEL À LA NETLIFY FUNCTION ***
+            const response = await fetch(GEMINI_FUNCTION_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.status === 429) {
+                if (i < maxRetries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, currentDelay));
+                    currentDelay *= 2; 
+                    continue; 
                 } else {
-                    throw new Error("Réponse de la Fonction Netlify vide.");
+                    throw new Error("Taux de requêtes API dépassé après plusieurs tentatives.");
+                }
+            }
+
+            if (!response.ok) {
+                // Si la fonction Netlify retourne une erreur, elle contient un JSON
+                const errorBody = await response.json(); 
+                throw new Error(`Erreur de l'API (via Serveur) : ${errorBody.error || response.statusText}`);
+            }
+
+            // La fonction Netlify retourne la réponse JSON directe de l'IA
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                const text = candidate.content.parts[0].text;
+                
+                let sources = [];
+                const groundingMetadata = candidate.groundingMetadata;
+                if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                    sources = groundingMetadata.groundingAttributions
+                        .map(attribution => ({
+                            uri: attribution.web?.uri,
+                            title: attribution.web?.title,
+                        }))
+                        .filter(source => source.uri && source.title);
                 }
 
-            } catch (error) {
-                console.error("Erreur IA sécurisée:", error);
-                window.displayMessage(`Erreur critique de la fonctionnalité IA : ${error.message}.`, true);
-            } finally {
+                displayAIResponse(text, sources);
                 setLoadingAI(false);
+                return; // Success
+            } else {
+                throw new Error("Réponse de l'IA vide ou mal formée.");
             }
-        };
+
+        } catch (error) {
+            console.error("Erreur Gemini:", error);
+            window.displayMessage(`Impossible de récupérer la définition : ${error.message}.`, true);
+            setLoadingAI(false);
+            return; // Exit after failure
+        }
+    }
+}
 
 
         document.addEventListener('DOMContentLoaded', () => {
